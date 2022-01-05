@@ -86,18 +86,17 @@
 
         group.scale.set(PARTICLE.scale.x, PARTICLE.scale.y, PARTICLE.scale.z);
         group.position.set(-PARTICLE.position.x, PARTICLE.position.y, PARTICLE.position.z);
-        console.log("原pos:"+group.position.x+","+group.position.y+","+group.position.z)
-        console.log("原rotation:"+group.rotation.x+","+group.rotation.y+","+group.rotation.z)
-        
         //旋转值在效果测试时，发现x不取反，yz值均需要取反
         // group.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(PARTICLE.rotation.x), HREE.MathUtils.degToRad(-PARTICLE.rotation.y), THREE.MathUtils.degToRad(-PARTICLE.rotation.z)));
-        group.rotateOnWorldAxis (new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(PARTICLE.rotation.x));
-        console.log("现rotation0:"+group.rotation.x+","+group.rotation.y+","+group.rotation.z)
-        group.rotateOnWorldAxis (new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(-PARTICLE.rotation.y));
-        console.log("现rotation1:"+group.rotation.x+","+group.rotation.y+","+group.rotation.z)
-        group.rotateOnWorldAxis (new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(-PARTICLE.rotation.z));
-        console.log("现pos:"+group.position.x+","+group.position.y+","+group.position.z)
-        console.log("现rotation2:"+group.rotation.x+","+group.rotation.y+","+group.rotation.z)
+        // group.rotateOnWorldAxis (new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(PARTICLE.rotation.x));
+        // group.rotateOnWorldAxis (new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(-PARTICLE.rotation.y));
+        // group.rotateOnWorldAxis (new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(-PARTICLE.rotation.z));
+        var q = new THREE.Quaternion( -PARTICLE.rotation.x, PARTICLE.rotation.y, PARTICLE.rotation.z, -PARTICLE.rotation.w );
+        var v = new THREE.Euler();  
+        v.setFromQuaternion( q );
+        v.y += Math.PI; // Y is 180 degrees off
+        v.z *= -1; // flip Z
+        group.rotation.copy( v );
 
         scene.add(group);
     }
@@ -144,7 +143,7 @@
             }
             else if (PARTICLE.shape == ShapeEnum.Box)
             {
-                obj.position.z += speed;
+                obj.position.z -= speed;
             }
 
             obj.position.x -= velocityLinearX;

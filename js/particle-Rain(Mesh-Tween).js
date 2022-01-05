@@ -2,7 +2,7 @@ import * as THREE from '../libs/threejs/build/three.module.js';
 
 //对应U3DTransform
 let position = new THREE.Vector3(0,0,0), 
-    rotation = new THREE.Vector3(60,130,0), 
+    rotation = new THREE.Quaternion(0.5,0.27,-0.14,0.82), 
     scale = new THREE.Vector3(1, 1, 1);
 //材质球贴图
 let texturePath = "../textures/arrows.png";
