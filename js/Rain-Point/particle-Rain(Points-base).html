@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>particle-Rain(Points-base)</title>
+    <script src="./camera.js" type="module"></script>
+    <script src="./fbxLoader.js" type="module"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<script type="module">
+
+    import * as THREE from '../libs/threejs/build/three.module.js';
+    import * as TWEEN from '../libs/tweenjs/dist/tween.esm.js';
+    import {camera, scene, renderer} from './camera.js'
+
+    let ShapeEnum = Object.freeze({
+        "Sphere":0,
+        "Rain":1,
+    });
+
+    let startTime, oldtime, maxCount, texture, cloud;
+    //对应U3DTransform
+    let position = new THREE.Vector3(0, 0, 0), rotation = new THREE.Vector3(0, 0, 0), scale = new THREE.Vector3(1, 1, 1);
+    //材质球贴图
+    let texturePath = "../textures/rain.png";
+
+    //对应U3D Duration
+    let duration = 5;
+    //对应U3D Looping
+    // let looping = true;
+    //对应U3D Start Lifetime
+    // let startLifetime = 5;
+    //对应U3D Start Size
+    let startSize = 10;
+    //对应U3D Start Rotation
+    // let startRotation = 0;
+    //对应U3D Start Color
+    let startColor = 0xffffff;
+    //对应U3D Rate over Time
+    let rateOverTime = 1000;
+    //对应U3D Playback Speed
+    // let playbackSpeed = 1;
+    //对应U3D Particles=Duration*rateOverTime
+    let MaxParticleCount = duration*rateOverTime;
+    //对应U3D Shape类型
+    let shape = 1;
+    //对应U3D 球形发射器半径
+    // let radius = 1;
+
+    init();
+    animate();
+
+    function init() {
+
+        maxCount = 0;
+
+        startTime = oldtime = Date.now()
+        texture = new THREE.TextureLoader().load(texturePath);
+    }
+
+    function animate() {
+
+        requestAnimationFrame( animate );
+        TWEEN.update();
+        render();
+    }
+
+    function render() {
+
+        var time = Date.now();
+
+        if (shape == ShapeEnum.Rain && time - oldtime > 100)
+        {
+            oldtime = time;
+            PointsRain();
+        }
+    }
+
+    function PointsRain(){
+        if (cloud)
+            scene.remove(cloud);
+
+        let geometry = new THREE.BufferGeometry();
+        const vertices = [];
+
+        let range = window.innerHeight;
+        for ( let i = 0; i < MaxParticleCount; i ++ ) {
+            const x = Math.random() * range - range / 2;
+            const y = Math.random() * range - range / 2;
+            const z = Math.random() * range - range / 2;
+
+            vertices.push( x, y, z );
+        }
+
+        geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+
+        let material = new THREE.PointsMaterial({
+            map: texture, 
+            color: startColor, 
+            size: startSize, 
+            blending: THREE.AdditiveBlending, 
+            depthTest: false, 
+            transparent: true,
+            sizeAttenuation:true
+        });
+
+        cloud = new THREE.Points( geometry, material );
+        cloud.rotation.set(rotation.x, rotation.y, rotation.z);
+        cloud.sortParticles = true;
+        scene.add(cloud);
+    }
+
+</script>
+<body>
+</body>
+</html>

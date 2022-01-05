@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>three.js</title>
+    <script src="./camera.js" type="module"></script>
+    <script src="./fbxLoader.js" type="module"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<script type="module">
+
+    import * as THREE from '../libs/threejs/build/three.module.js';
+    import * as TWEEN from '../libs/tweenjs/dist/tween.esm.js';
+    import {camera, scene, renderer} from './camera.js'
+
+    let ShapeEnum = Object.freeze({
+        "Sphere":0,
+        "Rain":1,
+    });
+
+    let group, startTime, oldtime, maxCount, texture, cloud;
+    //对应U3DTransform
+    let position = new THREE.Vector3(0, 0, 0), rotation = new THREE.Vector3(0, 0, 0), scale = new THREE.Vector3(1, 1, 1);
+    //材质球贴图
+    let texturePath = "../textures/rain.png";
+
+    //对应U3D Duration
+    let duration = 5;
+    //对应U3D Looping
+    let looping = true;
+    //对应U3D Start Lifetime
+    let startLifetime = 5;
+    //对应U3D Start Size
+    let startSize = 10;
+    //对应U3D Start Rotation
+    let startRotation = 0;
+    //对应U3D Start Color
+    let startColor = 0xffffff;
+    //对应U3D Rate over Time
+    let rateOverTime = 1500;
+    //对应U3D Playback Speed
+    let playbackSpeed = 1;
+    //对应U3D Particles=Duration*rateOverTime
+    let MaxParticleCount = duration*rateOverTime;
+    //对应U3D Shape类型
+    let shape = 1;
+    //对应U3D 球形发射器半径/box发射器边长
+    let radius = 1;
+
+    init();
+    animate();
+
+    function init() {
+
+        maxCount = 0;
+
+        group = new THREE.Group();
+
+        startTime = oldtime = Date.now()
+        texture = new THREE.TextureLoader().load(texturePath);
+
+        document.body.addEventListener( 'pointermove', onPointerMove );
+
+        if (shape == ShapeEnum.Sphere)
+            GreatSpriteMany(startLifetime);
+    }
+
+    function animate() {
+
+        requestAnimationFrame( animate );
+        TWEEN.update();
+        render();
+    }
+
+    function onPointerMove( event ) {
+
+        if ( event.isPrimary === false ) return;
+
+        // Math.abs(Math.cos(-camera.rotation.x)) * 
+    }
+
+
+    function render() {
+
+        var time = Date.now();
+
+        if (shape == ShapeEnum.Sphere
+            && time - oldtime > 1000/rateOverTime/playbackSpeed && maxCount <= MaxParticleCount 
+            && (looping|| !looping && time - startTime <= duration * 1000/playbackSpeed))
+        { 
+            oldtime = time;
+            GreatSpriteMany(1);
+        }
+        else if (shape == ShapeEnum.Rain && time - oldtime > 500)
+        {
+            oldtime = time;
+            PointsRain();
+        }
+    }
+
+    //生产粒子
+    function CreateSprite() {
+
+        var materialC = new THREE.SpriteMaterial({ 
+            map: texture, 
+            side: THREE.DoubleSide,
+            color: startColor, 
+            fog: true, 
+            rotation: startRotation 
+        });
+        var sprite = new THREE.Sprite(materialC);
+        sprite.scale.set(scale.x * startSize * 0.7, scale.y * startSize * 0.7, scale.z * startSize * 0.7);
+        sprite.rotation.set(rotation.x, rotation.y, rotation.z);
+        return (sprite);
+    }
+    
+    //管理粒子
+    function GreatSpriteMany(count) {
+        group = new THREE.Group();
+        maxCount += count;
+        // console.log("创建了"+count+"个,还剩"+maxCount+"个");
+        for (var i = count; i > 0; i--) {
+            if (shape == ShapeEnum.Sphere)
+            { 
+                var obj = CreateSprite();
+                scene.add(obj);
+                TweenSpriteSphere(obj);
+            }
+        }
+    }
+    
+    //粒子球形随机运动
+    function TweenSpriteSphere(obj) {
+        obj.position.set(position.x + Math.random() * 2 - 1, position.y + Math.random() * 2 - 1, position.z + Math.random() * 2 - 1);
+        
+        var pos = obj.position;
+        var durationTime = duration * 1000 / playbackSpeed;
+        var  tweenA = new TWEEN.Tween(pos)
+            .to({
+                x: pos.x * radius * 10,
+                y: pos.y * radius * 10,
+                z: pos.z * radius * 10
+            }, durationTime)
+            .onComplete(function(){
+                maxCount--;
+                scene.remove(obj);
+                // console.log("销毁了1个,还剩"+maxCount+"个");
+            });
+    
+        tweenA.start();
+    }
+
+    //点云-下雨特效
+    function PointsRain(){
+        if (cloud)
+            scene.remove(cloud);
+
+        cloud = GetPoints(texture);
+        cloud.rotation.set(rotation.x, rotation.y, rotation.z);
+        cloud.sortParticles = true;
+        scene.add(cloud);
+
+        RainAnimation();
+    }
+
+
+    function GetPoints(tex){
+        let geometry = new THREE.BufferGeometry();
+        const vertices = [];
+
+        let range = window.innerHeight;
+        for ( let i = 0; i < MaxParticleCount; i ++ ) {
+            const x = Math.random() * range - range / 2;
+            const y = Math.random() * range - range / 2;
+            const z = Math.random() * range - range / 2;
+
+            vertices.push( x, y, z );
+        }
+
+        geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+
+        let material = new THREE.PointsMaterial({
+            map: tex, 
+            color: startColor, 
+            size: startSize*0.5, 
+            blending: THREE.AdditiveBlending, 
+            depthTest: false, 
+            transparent: true,
+            sizeAttenuation:true
+        });
+
+        let point = new THREE.Points( geometry, material );
+        point.position.set(72,62,100);
+        // point.scale.set(10, 10, 10);
+        return point;
+    }
+
+    function RainAnimation(){
+        let animateCloud = GetPoints(new THREE.TextureLoader().load(texturePath))
+        animateCloud.rotation.set(rotation.x, rotation.y, rotation.z);
+        animateCloud.sortParticles = true;
+        scene.add(animateCloud);
+        
+        var pos = animateCloud.position;
+        var  tweenA = new TWEEN.Tween(pos)
+            .to({
+                y: pos.y -110,
+            }, 500)
+            .onComplete(function(){
+                scene.remove(animateCloud);
+            });
+        
+        tweenA.start();
+    }
+
+</script>
+<body>
+</body>
+</html>

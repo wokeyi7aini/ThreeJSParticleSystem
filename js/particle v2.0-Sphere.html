@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>three.js</title>
+    <!-- <script src="./fbxLoader.js" type="module"></script> -->
+    <!-- <script src="./skyboxTest copy.js" type="module"></script> -->
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<script type="module">
+    import * as THREE from '../libs/threejs/build/three.module.js';
+    import * as TWEEN from '../libs/tweenjs/dist/tween.esm.js';
+    import {camera, scene, renderer} from './camera.js';
+    import * as PARTICLE from './particle-Sphere.js';
+    // import * as PARTICLE from './particle-Cloud(Mesh).js';
+    // import * as PARTICLE from './particle-Rain(Mesh-Tween).js';
+
+    let ShapeEnum = Object.freeze({
+        "Sphere":"Sphere",
+        "Hemisphere":"Hemisphere",
+        "Box" : "Box",
+    });
+
+    let startTime, oldtime, currentCount, texture;
+    let group = new THREE.Group();
+
+     //Particles=PARTICLE.startLifetime*PARTICLE.rateOverTime
+     let MaxParticleCount = PARTICLE.startLifetime*PARTICLE.rateOverTime <= PARTICLE.maxParticles ? PARTICLE.startLifetime*PARTICLE.rateOverTime : PARTICLE.maxParticles;
+
+    let particleArr = new Array();
+    let particleCreateTimeArr = new Array();
+
+    init();
+    animate();
+
+    function init() {
+        currentCount = 0;
+        
+        startTime = oldtime = Date.now()
+        texture = new THREE.TextureLoader().load(PARTICLE.texturePath);
+
+        if (PARTICLE.prewarm)
+            ParticleMany(PARTICLE.startLifetime);
+    }
+
+    function animate() {
+
+        requestAnimationFrame( animate );
+        TWEEN.update();
+        render();
+        particleAnimation();
+    }
+
+    function particleAnimation(){
+        let timeOut = Date.now() - particleCreateTimeArr[0] >= PARTICLE.duration * 1000/PARTICLE.playbackSpeed;
+
+        if (particleArr.length >= MaxParticleCount && timeOut)
+        {
+            currentCount--;
+            group.remove(particleArr[0]);
+            // console.log("销毁了1个,还剩"+currentCount+"个");
+            particleArr.shift();
+            particleCreateTimeArr.shift();
+        }
+
+        for (let i = 0; i < particleArr.length; i++)
+        {
+            let obj = particleArr[i];
+            if (PARTICLE.shape == ShapeEnum.Sphere | PARTICLE.shape == ShapeEnum.Hemisphere)
+            {
+                obj.position.x *= 2;
+                obj.position.y *= 2;
+                obj.position.z *= 2;
+            }
+            else if (PARTICLE.shape == ShapeEnum.Box)
+            {
+                obj.position.z += 1;
+            }
+        }
+    }
+
+    function render() {
+
+        let time = Date.now();
+
+        if (currentCount < MaxParticleCount
+            && (PARTICLE.looping|| !PARTICLE.looping && time - startTime < PARTICLE.duration * 1000/PARTICLE.playbackSpeed))
+        { 
+            oldtime = time;
+            ParticleMany(1);
+        }
+    }
+
+    //#region 球形发射器
+    //生产粒子
+    function CreateSprite() {
+
+        let materialC = new THREE.SpriteMaterial({ 
+            map: texture, 
+            side: THREE.DoubleSide,
+            color: PARTICLE.startColor, 
+            fog: true, 
+            rotation: PARTICLE.startRotation,
+            transparent: true,
+            opacity: 1
+        });
+        let sprite = new THREE.Sprite(materialC);
+        sprite.scale.set(PARTICLE.startSize * 0.7, PARTICLE.startSize * 0.7, PARTICLE.startSize * 0.7);
+        
+        let theta = Math.random()*360 * (Math.PI / 180);
+        let phi = Math.random()*360 * (Math.PI / 180);
+        sprite.position.setFromSphericalCoords( PARTICLE.radius, phi, theta );
+
+        sprite.position.set(sprite.position.x, sprite.position.y, sprite.position.z);
+
+        return (sprite);
+    }
+
+    //粒子球形随机运动
+    function TweenSpriteSphere(obj) {
+        let pos = obj.position;
+        let durationTime = PARTICLE.duration * 1000 / PARTICLE.playbackSpeed;
+        let  tweenA = new TWEEN.Tween(pos)
+            .to({
+                x: (pos.x + PARTICLE.velocityLinear.x) * 10,
+                y: (pos.y + PARTICLE.velocityLinear.y) * 10,
+                z: (pos.z + PARTICLE.velocityLinear.z) * 10
+            }, durationTime)
+            .onComplete(function(){
+                currentCount--;
+                group.remove(obj);
+                // console.log("销毁了1个,还剩"+currentCount+"个");
+            });
+
+        tweenA.start();
+    }
+    //#endregion
+
+    //管理粒子  
+    function ParticleMany(count) {
+        currentCount += count;
+
+        console.log("创建了"+count+"个,还剩"+currentCount+"个");
+        for (let i = count; i > 0; i--) {
+            if (PARTICLE.shape == ShapeEnum.Sphere)
+            { 
+                let obj = CreateSprite();
+                group.add(obj);
+                TweenSpriteSphere(obj);
+            }
+            else if (PARTICLE.shape == ShapeEnum.Box)
+            { 
+            }
+            else if (PARTICLE.shape == ShapeEnum.Hemisphere)
+            { 
+            }
+        }
+
+        group.scale.set(PARTICLE.scale.x, PARTICLE.scale.y, PARTICLE.scale.z);
+        group.rotation.set(PARTICLE.rotation.x, PARTICLE.rotation.y, PARTICLE.rotation.z);
+        group.position.set(PARTICLE.position.x, PARTICLE.position.y, PARTICLE.position.z);
+
+        scene.add(group);
+    }
+
+</script>
+<body>
+</body>
+</html>

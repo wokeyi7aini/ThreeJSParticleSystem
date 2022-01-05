@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>three.js</title>
+    <script src="./fbxLoader.js" type="module"></script>
+    <script src="./skyboxTest copy.js" type="module"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<script type="module">
+    import * as THREE from '../libs/threejs/build/three.module.js';
+    import * as TWEEN from '../libs/tweenjs/dist/tween.esm.js';
+    import {camera, scene, renderer} from './camera.js';
+    // import * as PARTICLE from './particle-Sphere.js';
+    // import * as PARTICLE from './particle-Cloud(Mesh).js';
+    import * as PARTICLE from './particle-Rain(Mesh-Tween).js';
+
+    let ShapeEnum = Object.freeze({
+        "Sphere":0,
+        "Rain":1,
+        "Cloudy" : 2,
+    });
+
+    let startTime, oldtime, currentCount, particleCountPerFrame, texture;
+    let group = new THREE.Group();
+ 
+    //Particles=PARTICLE.startLifetime*PARTICLE.rateOverTime
+    let MaxParticleCount = PARTICLE.startLifetime*PARTICLE.rateOverTime <= PARTICLE.maxParticles ? PARTICLE.startLifetime*PARTICLE.rateOverTime : PARTICLE.maxParticles;
+
+    init();
+    animate();
+
+    function init() {
+        currentCount = 0;
+        
+        startTime = oldtime = Date.now()
+        texture = new THREE.TextureLoader().load(PARTICLE.texturePath);
+
+        if (PARTICLE.shape == ShapeEnum.Sphere | PARTICLE.shape == ShapeEnum.Cloudy)
+            particleCountPerFrame = 1;
+        else if (PARTICLE.shape == ShapeEnum.Rain)
+            particleCountPerFrame = parseInt(MaxParticleCount / 60 / PARTICLE.duration);
+
+        if (PARTICLE.prewarm)
+            ParticleMany(PARTICLE.startLifetime);
+    }
+
+    function animate() {
+
+        requestAnimationFrame( animate );
+        TWEEN.update();
+        render();
+    }
+
+    function render() {
+
+        let time = Date.now();
+
+        if ((PARTICLE.shape == ShapeEnum.Sphere || PARTICLE.shape == ShapeEnum.Cloudy)
+            && time - oldtime > 1000/PARTICLE.rateOverTime/PARTICLE.playbackSpeed && currentCount < MaxParticleCount 
+            && (PARTICLE.looping|| !PARTICLE.looping && time - startTime < PARTICLE.duration * 1000/PARTICLE.playbackSpeed)
+            || (PARTICLE.shape == ShapeEnum.Rain
+            && currentCount < MaxParticleCount
+            && (PARTICLE.looping|| !PARTICLE.looping && time - startTime < PARTICLE.duration * 1000/PARTICLE.playbackSpeed)))
+        { 
+            oldtime = time;
+            ParticleMany(particleCountPerFrame);
+        }
+    }
+
+    //#region 球形发射器
+    //生产粒子
+    function CreateSprite() {
+
+        let materialC = new THREE.SpriteMaterial({ 
+            map: texture, 
+            side: THREE.DoubleSide,
+            color: PARTICLE.startColor, 
+            fog: true, 
+            rotation: PARTICLE.startRotation,
+            transparent: true,
+            opacity: 1
+        });
+        let sprite = new THREE.Sprite(materialC);
+        sprite.scale.set(PARTICLE.startSize * 0.7, PARTICLE.startSize * 0.7, PARTICLE.startSize * 0.7);
+        
+        let theta = Math.random()*360 * (Math.PI / 180);
+        let phi = Math.random()*360 * (Math.PI / 180);
+        sprite.position.setFromSphericalCoords( PARTICLE.radius, phi, theta );
+
+        sprite.position.set(sprite.position.x, sprite.position.y, sprite.position.z);
+
+        return (sprite);
+    }
+
+    //粒子球形随机运动
+    function TweenSpriteSphere(obj) {
+        let pos = obj.position;
+        let durationTime = PARTICLE.duration * 1000 / PARTICLE.playbackSpeed;
+        let  tweenA = new TWEEN.Tween(pos)
+            .to({
+                x: (pos.x + PARTICLE.velocityLinear.x) * 10,
+                y: (pos.y + PARTICLE.velocityLinear.y) * 10,
+                z: (pos.z + PARTICLE.velocityLinear.z) * 10
+            }, durationTime)
+            .onComplete(function(){
+                currentCount--;
+                group.remove(obj);
+                // console.log("销毁了1个,还剩"+currentCount+"个");
+            });
+
+        tweenA.start();
+    }
+    //#endregion
+
+
+    //#region 下雨/雪
+    //生产粒子
+    function CreateMeshPlane() {
+
+        let material = new THREE.MeshLambertMaterial({
+            map: texture,
+            side: THREE.DoubleSide,
+            emissive:PARTICLE.startColor,
+            emissiveIntensity:3,
+            transparent: true,
+        })
+
+        var img = new Image();
+        img.src = PARTICLE.texturePath;
+
+        //下雪的大小要改一下
+        let geometry = new THREE.PlaneBufferGeometry(PARTICLE.startSize, /*img.width/img.height**/PARTICLE.startSize, 1);
+
+        let box = new THREE.Mesh(geometry, material);
+        // box.rotation.set(0, 0, PARTICLE.startRotation);
+        return box;
+    }
+
+    //粒子向下
+    function TweenMeshRain(obj) {
+        let range = window.innerHeight + Math.random();
+        obj.position.set(PARTICLE.position.x + Math.random() * PARTICLE.ShapeScale.x, 
+        PARTICLE.position.y + Math.random() * PARTICLE.ShapeScale.y, 
+        PARTICLE.position.z + Math.random() * PARTICLE.ShapeScale.z);
+        
+        let pos = obj.position;
+        let durationTime = PARTICLE.duration * 1000 / PARTICLE.playbackSpeed;
+        let  tweenA = new TWEEN.Tween(pos)
+            .to({
+                x: pos.x - durationTime * PARTICLE.startSpeed * PARTICLE.velocityLinear.x,
+                y: pos.y - durationTime * PARTICLE.startSpeed * PARTICLE.velocityLinear.y,
+                y: pos.z - durationTime * PARTICLE.startSpeed * PARTICLE.velocityLinear.z,
+            }, durationTime)
+            .onComplete(function(){
+                currentCount--;
+                group.remove(obj);
+                // console.log("销毁了1个,还剩"+currentCount+"个");
+            });
+
+        tweenA.start();
+    }
+    //#endregion
+
+
+    //#region 多云
+    //生产粒子
+    function CreateCloud() {
+
+        let material = new THREE.MeshLambertMaterial({ 
+            map: texture, 
+            side: THREE.BackSide,
+            // color: PARTICLE.startColor, 
+            emissive:PARTICLE.startColor,
+            emissiveIntensity:1,
+            fog: true, 
+            // rotation: PARTICLE.startRotation,
+            transparent: true,
+            opacity:0,
+            depthWrite:false,
+            combine:THREE.MixOperation,
+            reflectivity:0.5,
+        });
+
+        // var img = new Image();
+        // img.src = PARTICLE.texturePath;
+        // console.log(img.width, img.height)
+         
+        let geometry = new THREE.PlaneBufferGeometry(PARTICLE.startSize * (1 + Math.random() * 2 / 3) * 2500,
+        /*img.width/img.height**/PARTICLE.startSize * (1 + Math.random() * 2 / 3) * 2500, 1);
+        let box = new THREE.Mesh(geometry, material);
+        box.rotation.set(0, 0, PARTICLE.startRotation + Math.random()*180);
+
+        let theta = Math.random()*360 * (Math.PI / 180);
+        let phi = Math.random()*360 * (Math.PI / 180);
+        box.position.setFromSphericalCoords( PARTICLE.radius * 2500, phi, theta );
+
+        box.position.set(box.position.x, box.position.y, Math.abs(box.position.z));
+
+        return box;
+    }
+
+    function TweenMeshCloud(obj) {
+        let durationTime = PARTICLE.duration * 1000 / PARTICLE.playbackSpeed;
+        let offset = Math.random() * 200;
+        let opacitySpeed = 0.25 / (PARTICLE.duration * 6);
+        let maxOpacity = /*Math.random() * */(obj.position.z / (PARTICLE.radius * 2500));
+        let  tweenA = new TWEEN.Tween(obj)
+        .to({
+            x: obj.position.z - offset
+        }, durationTime / 4)
+        .onUpdate(function (obj) {
+            if (obj.material.opacity < maxOpacity)
+                obj.material.opacity += opacitySpeed;
+
+            obj.position.x += PARTICLE.velocityLinear.x * 50;
+            obj.position.y += PARTICLE.velocityLinear.y * 50;
+            obj.position.z += PARTICLE.velocityLinear.z * 50;
+        });
+
+        let  tweenB = new TWEEN.Tween(obj)
+        .to({
+            x: obj.position.z + offset,
+        }, durationTime / 4)
+        .onUpdate(function (obj) {
+            obj.position.x += PARTICLE.velocityLinear.x * 50;
+            obj.position.y += PARTICLE.velocityLinear.y * 50;
+            obj.position.z += PARTICLE.velocityLinear.z * 50;
+        });
+
+        let  tweenC = new TWEEN.Tween(obj)
+        .to({
+            x: obj.position.z - offset,
+        }, durationTime / 4)
+        .onUpdate(function (obj) {
+            obj.position.x += PARTICLE.velocityLinear.x * 50;
+            obj.position.y += PARTICLE.velocityLinear.y * 50;
+            obj.position.z += PARTICLE.velocityLinear.z * 50;
+        });
+
+        let  tweenD = new TWEEN.Tween(obj)
+        .to({
+            x: obj.position.z + offset,
+        }, durationTime / 2)
+        .onUpdate(function (obj) {
+            if (obj.material.opacity > 0)
+                obj.material.opacity -= opacitySpeed;
+
+            obj.position.x += PARTICLE.velocityLinear.x * 50;
+            obj.position.y += PARTICLE.velocityLinear.y * 50;
+            obj.position.z += PARTICLE.velocityLinear.z * 50;
+        })
+        .onComplete(function(){
+            currentCount--;
+            group.remove(obj);
+            // console.log("销毁了1个,还剩"+currentCount+"个");
+        });
+
+        tweenA.chain(tweenB);
+        tweenB.chain(tweenC);
+        tweenC.chain(tweenD);
+        tweenA.start();
+    }
+    //#endregion
+
+
+    //管理粒子
+    function ParticleMany(count) {
+        currentCount += count;
+
+        // console.log("创建了"+count+"个,还剩"+currentCount+"个");
+        for (let i = count; i > 0; i--) {
+            if (PARTICLE.shape == ShapeEnum.Sphere)
+            { 
+                let obj = CreateSprite();
+                group.add(obj);
+                TweenSpriteSphere(obj);
+            }
+            else if (PARTICLE.shape == ShapeEnum.Rain)
+            { 
+                let obj = CreateMeshPlane();
+                group.add(obj);
+                TweenMeshRain(obj);
+            }
+            else if (PARTICLE.shape == ShapeEnum.Cloudy)
+            { 
+                let obj = CreateCloud();
+                TweenMeshCloud(obj);
+                group.add(obj);
+            }
+        }
+
+        if (PARTICLE.shape == ShapeEnum.Cloudy)
+            group.scale.set(PARTICLE.scale.x, PARTICLE.scale.y, PARTICLE.scale.z * 0.7);
+        else
+            group.scale.set(PARTICLE.scale.x, PARTICLE.scale.y, PARTICLE.scale.z);
+        group.rotation.set(PARTICLE.rotation.x, PARTICLE.rotation.y, PARTICLE.rotation.z);
+        group.position.set(PARTICLE.position.x, PARTICLE.position.y, PARTICLE.position.z);
+
+        scene.add(group);
+    }
+
+</script>
+<body>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>three.js</title>
+    <script src="./camera.js" type="module"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<script type="module">
+
+    import * as THREE from '../libs/threejs/build/three.module.js';
+    import {camera, scene, renderer} from './camera.js'
+
+    let texture;
+    //初始的偏移量
+    let offsetInitX = 0, offsetInitY = 0
+
+    //对应U3D 流光粗细
+    let width = 1;
+    //自发光颜色
+    let emissiveColor = 0xffffff;
+    //图片自发光强度
+    let emissiveIntensity = 1;
+    //偏移量
+    let offsetX = -0.01, offsetY = 0;
+    //裁剪
+    let tilingX = 1, tilingY = 1;
+    //坐标点，每3个为(x,y,z)一组
+    let pathArr = [
+        -100,-100,-100,
+        0,0,-100,
+    ];
+    let texturePath = "../textures/line.png";
+    //是否重复播放
+    let loop = true;
+    //是否首尾相连
+    let closed = false;
+    //管道转折点光滑度
+    let tubularSegments = 500;
+    //管道切面顶点数 int类型且>=2，2为线条，3为三角形，4为正方形，数值越大越接近圆
+    let radialSegments = 10;
+
+    LineAnimation(pathArr);
+    animate();
+
+    //粒子流光运动
+    function LineAnimation(pathArr){
+        try
+        {
+            let curveArr = []
+            // 三个一组取出curve数据
+            for(let i = 0; i < pathArr.length; i+=3) {
+            curveArr.push(new THREE.Vector3(pathArr[i], pathArr[i+1], pathArr[i+2]));
+            }
+            if (closed)
+            {
+            curveArr.push(new THREE.Vector3(pathArr[0], pathArr[1], pathArr[2]));
+            }
+        
+            // CatmullRomCurve3创建一条平滑的三维样条曲线
+            var curve = new THREE.CatmullRomCurve3(curveArr);
+        
+            texture = new THREE.TextureLoader().load(texturePath);
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping; //每个都重复
+            texture.repeat.set(tilingX, tilingY)
+            texture.needsUpdate = true
+        
+            let material = new THREE.MeshLambertMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                emissive:emissiveColor,
+                emissiveIntensity:emissiveIntensity,
+                transparent: true
+            })
+        
+            // 创建管道
+            let tubeGeometry = new THREE.TubeGeometry(curve, tubularSegments, width*0.67, radialSegments, closed);
+            let mesh = new THREE.Mesh(tubeGeometry, material);
+        
+            scene.add(mesh);
+        }
+        catch{
+            console.log("出错了");
+        }
+    }
+
+    function animate() {
+        requestAnimationFrame( animate );
+        update();
+    }
+
+    function update() {
+
+        if(texture  && (loop || 
+            (!loop && Math.abs(texture.offset.x - offsetInitX) < 1 
+            && Math.abs(texture.offset.y - offsetInitY) < 1) ))
+        {     
+            // 设置纹理偏移
+            texture.offset.x += (offsetX / 4.9);
+            texture.offset.y += (offsetY / 4.9);
+        }
+    }
+
+</script>
+<body>
+</body>
+</html>
