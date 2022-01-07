@@ -1,0 +1,244 @@
+import * as THREE from '../libs/threejs/build/three.module.js';
+import {camera, scene, renderer} from './camera.js';
+// import * as PARTICLE from './particle-Sphere.js';
+// import * as PARTICLE from './particle-Cloud(Mesh).js';
+import * as PARTICLE from './particle-Rain(Mesh-Tween).js';
+import Manager from './manager.js';
+
+const ShapeEnum = Object.freeze({
+    Sphere: 'Sphere',
+    Hemisphere: 'Hemisphere',
+    Box: 'Box'
+}),
+
+RenderMode = Object.freeze({
+    // 粒子总是面对相机
+    Billboard: 'Billboard',
+    Stretch: 'Stretch',
+    // 粒子平面平行于Floor平面，同时始终指向世界坐标的X轴负方向
+    HorizontalBillboard: 'HorizontalBillboard',
+    // 粒子平面平行于世界坐标的Y轴，但是面向相机
+    VerticalBillboard: 'VerticalBillboard'
+});
+
+let startTime, currentCount, texture, speed;
+let objZero = new THREE.Vector3();
+let group = new THREE.Group();
+//创建粒子间隙时间
+let interval = 0, intervalCount = 0;
+//创建粒子数量
+let newPerFrame = 0, newCount = 0;
+let velocityLinearX, velocityLinearY, velocityLinearZ;
+let startRotation = 0;
+
+//最大粒子数 Particles=PARTICLE.startLifetime*PARTICLE.rateOverTime
+let MaxParticleCount = PARTICLE.startLifetime*PARTICLE.rateOverTime <= PARTICLE.maxParticles ? 
+PARTICLE.startLifetime*PARTICLE.rateOverTime : PARTICLE.maxParticles;
+
+//粒子数组
+let particleArr = new Array();
+//每一个粒子对应的创建时间数组
+let particleCreateTimeArr = new Array();
+
+init();
+animate();
+
+function init() {
+    currentCount = 0;
+    
+    startTime = Date.now()
+    texture = new THREE.TextureLoader().load(PARTICLE.texturePath);
+
+    intervalCount = parseInt(60/PARTICLE.rateOverTime);
+    if (intervalCount <= 0) intervalCount = 1;
+
+    //每一帧发射rateOverTime/60个粒子
+    newPerFrame = parseInt(1 * PARTICLE.rateOverTime / 60);
+    newCount = newPerFrame;
+    if (newCount == 0) newCount = 1;
+    newCount = newCount * PARTICLE.playbackSpeed;
+
+    velocityLinearX = PARTICLE.velocityLinear.x*0.02;
+    velocityLinearY = PARTICLE.velocityLinear.y*0.02;
+    velocityLinearZ = PARTICLE.velocityLinear.z*0.02;
+    speed = PARTICLE.startSpeed * 0.02 * PARTICLE.playbackSpeed;
+
+    startRotation = THREE.MathUtils.degToRad(PARTICLE.startRotation);
+
+    //预热，先发射所有的粒子
+    if (PARTICLE.prewarm)
+        ParticleMany(MaxParticleCount);
+
+    group.scale.set(PARTICLE.scale.x, PARTICLE.scale.y, PARTICLE.scale.z);
+    group.position.set(-PARTICLE.position.x, PARTICLE.position.y, PARTICLE.position.z);
+    //旋转值在效果测试时，发现需要左手坐标系转右手坐标系
+    var q = new THREE.Quaternion( -PARTICLE.rotation.x, PARTICLE.rotation.y, PARTICLE.rotation.z, -PARTICLE.rotation.w );
+    var v = new THREE.Euler();  
+    v.setFromQuaternion( q );
+    v.y += Math.PI; // Y is 180 degrees off
+    v.z *= -1; // flip Z
+    group.rotation.copy( v );
+
+    scene.add(group);
+}
+
+function animate() {
+    // console.log(camera.position.x+","+camera.position.y+","+camera.position.z)
+
+    requestAnimationFrame( animate );
+    production();
+    particleAnimation();
+}
+
+function particleAnimation(){
+
+    let life = Date.now() - particleCreateTimeArr[0];
+    //没活够，但是粒子数量太多了，需要生成新的粒子了，就要把老的销毁了
+    if ((particleArr.length >= MaxParticleCount 
+    //每一个粒子对应的创建时间数组
+    && life >= PARTICLE.duration * 1000/PARTICLE.playbackSpeed)
+    //活够了，销毁了
+    || life >= PARTICLE.startLifetime * 1000/PARTICLE.playbackSpeed)
+    {
+        currentCount--;
+        group.remove(particleArr[0]);
+        //每一个粒子对应的创建时间数组
+        // console.log("销毁了1个,还剩"+currentCount+"个");
+        particleArr.shift();
+        //每一个粒子对应的创建时间数组
+        particleCreateTimeArr.shift();
+    }   
+    // camera正前方向量
+    let tartgetPosCamera = camera.getWorldDirection(new THREE.Vector3());
+    for (let i = 0; i < particleArr.length; i++)
+    //每一个粒子对应的创建时间数组
+    {
+        let obj = particleArr[i];
+        //每一个粒子对应的创建时间数组
+        if (PARTICLE.shape == ShapeEnum.Sphere | PARTICLE.shape == ShapeEnum.Hemisphere)
+        {
+            obj.position.x -= speed;
+            obj.position.y += speed;
+            obj.position.z += speed;
+        }
+        else if (PARTICLE.shape == ShapeEnum.Box)
+        {
+            obj.position.z -= speed;
+        }
+
+        obj.position.x -= velocityLinearX;
+        obj.position.y += velocityLinearY;
+        obj.position.z += velocityLinearZ;
+
+        let world = obj.getWorldPosition(new THREE.Vector3());
+        //粒子总是面对相机
+        if (PARTICLE.renderMode == RenderMode.Billboard)
+        {
+            let targetYPos = new THREE.Vector3(world.x - tartgetPosCamera.x, world.y - tartgetPosCamera.y, world.z - tartgetPosCamera.z);
+            obj.lookAt(targetYPos);
+            obj.rotation.z -= startRotation;
+        }
+        else if (PARTICLE.renderMode == RenderMode.Stretch)
+        {
+            let targetYPos = new THREE.Vector3(obj.position.x - camera.position.x, obj.position.y - camera.position.y, obj.position.z - camera.position.z);
+            obj.lookAt(targetYPos);
+        }
+        else if (PARTICLE.renderMode == RenderMode.HorizontalBillboard)
+        {
+            let targetYPos = new THREE.Vector3(world.x - objZero.x, world.y- objZero.y - Math.PI/2, world.z - objZero.z);
+            obj.lookAt(targetYPos);
+            obj.rotation.z = obj.rotation.z - Math.PI + startRotation;
+        }
+        //粒子平面平行于世界坐标的Y轴，但是面向相机
+        else if (PARTICLE.renderMode == RenderMode.VerticalBillboard)
+        {
+            let targetYPos = new THREE.Vector3(world.x - tartgetPosCamera.x, world.y, world.z - tartgetPosCamera.z);
+            obj.lookAt(targetYPos);
+            obj.rotation.z -= startRotation;
+        }
+    }
+}
+
+function production() {
+    if (newPerFrame <= 0)
+    {
+        interval++;
+        if (interval % intervalCount != 0) return;
+    }
+
+    let time = Date.now();
+    if (currentCount < MaxParticleCount
+        && (PARTICLE.looping|| !PARTICLE.looping && time - startTime < PARTICLE.duration * 1000/PARTICLE.playbackSpeed))
+    { 
+        ParticleMany(newCount);
+    }
+}
+
+//#region 下雨/雪
+//生产粒子
+function CreateMeshPlane() {
+    let material;
+    if (PARTICLE.emissiveColorHex != null)
+        material = new THREE.MeshLambertMaterial({
+            map: texture,
+            depthWrite:false,
+            side: THREE.DoubleSide,
+            color:PARTICLE.mainColorHex,
+            emissive:PARTICLE.emissiveColorHex,
+            emissiveIntensity:3,
+            transparent: true,
+            opacity: 1,
+        })
+    else
+        material = new THREE.MeshLambertMaterial({
+            map: texture,
+            depthWrite:false,
+            side: THREE.DoubleSide,
+            color:PARTICLE.mainColorHex,
+            emissive:PARTICLE.mainColorHex,
+            emissiveIntensity:3,
+            transparent: true,
+            opacity: 1,
+        })
+
+    let x = 1;
+    if (PARTICLE.renderMode == RenderMode.Stretch)
+        x = PARTICLE.renderLengthScale;
+
+    let geometry = new THREE.PlaneBufferGeometry(PARTICLE.startSize * x, PARTICLE.startSize, 1);
+
+    let box = new THREE.Mesh(geometry, material);
+    objZero.copy(box.rotation);
+    box.updateMatrixWorld();
+    return box;
+}
+//#endregion
+
+//管理粒子  
+function ParticleMany(count) {
+    currentCount += count;
+
+    // console.log("创建了"+count+"个,还剩"+currentCount+"个");
+    for (let i = count; i > 0; i--) {
+        if (PARTICLE.shape == ShapeEnum.Sphere)
+        { 
+            
+        }
+        else if (PARTICLE.shape == ShapeEnum.Box)
+        { 
+            let obj = CreateMeshPlane();
+            group.add(obj);
+            obj.position.set((Math.random() - 0.5) * PARTICLE.ShapeScale.x, 
+            (Math.random() - 0.5) * PARTICLE.ShapeScale.y, 
+            (Math.random() - 0.5) * PARTICLE.ShapeScale.z);
+
+            particleArr.push(obj);
+            //每一个粒子对应的创建时间数组
+            particleCreateTimeArr.push(Date.now());
+        }
+        else if (PARTICLE.shape == ShapeEnum.Hemisphere)
+        { 
+            
+        }
+    }
+}
