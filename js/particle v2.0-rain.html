@@ -160,7 +160,8 @@
             }
             else if (PARTICLE.renderMode == RenderMode.Stretch)
             {
-                obj.lookAt(camera.position);
+                let targetYPos = new THREE.Vector3(obj.position.x - camera.position.x, obj.position.y - camera.position.y, obj.position.z - camera.position.z);
+                obj.lookAt(targetYPos);
             }
             else if (PARTICLE.renderMode == RenderMode.HorizontalBillboard)
             {
