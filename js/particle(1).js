@@ -29,6 +29,7 @@ export default class ParticleManager extends Manager {
         this.PARTICLE = this.formatOption(PARTICLE); // 粒子配置解析
 
         this.load = false;
+        this.vec3Zero = new THREE.Vector3();
         this.objZero = new THREE.Vector3();
         this.group = new THREE.Group();
         this.MaxParticleCount = 0;
@@ -96,7 +97,6 @@ export default class ParticleManager extends Manager {
                 map: this.texture,
                 depthWrite: false,
                 side: THREE.DoubleSide,
-                color: new THREE.Color(new THREE.Color(this.PARTICLE.mainColorHex).convertSRGBToLinear()),
                 // emissive: new THREE.Color(new THREE.Color(this.PARTICLE.emissiveColorHex).convertSRGBToLinear()),
                 // emissiveIntensity: 3,
                 transparent: true,
@@ -154,7 +154,8 @@ export default class ParticleManager extends Manager {
 
         group.scale.set(this.PARTICLE.scale.x, this.PARTICLE.scale.y, this.PARTICLE.scale.z);
         group.position.set(-this.PARTICLE.position.x, this.PARTICLE.position.y, this.PARTICLE.position.z);
-        // 旋转值在效果测试时，发现需要左手坐标系转右手坐标系
+        // 旋转值在效果测试时，发现x不取反，yz值均需要取反
+
         const q = new THREE.Quaternion(-this.PARTICLE.rotation.x, this.PARTICLE.rotation.y, this.PARTICLE.rotation.z, -this.PARTICLE.rotation.w),
             v = new THREE.Euler();
         v.setFromQuaternion(q);
@@ -173,11 +174,7 @@ export default class ParticleManager extends Manager {
 
         // console.log("创建了"+count+"个,还剩"+currentCount+"个");
         for (let i = count; i > 0; i--) {
-            if (PARTICLE.shape == ShapeEnum.Sphere)
-            { 
-                
-            }
-            else if (this.PARTICLE.shape === ShapeEnum.Box) {
+            if (this.PARTICLE.shape === ShapeEnum.Box) {
                 const obj = this.CreateMeshPlane();
                 this.group.add(obj);
                 obj.position.set((Math.random() - 0.5) * this.PARTICLE.ShapeScale.x,
@@ -187,10 +184,6 @@ export default class ParticleManager extends Manager {
                 this.particleArr.push(obj);
                 // 每一个粒子对应的创建时间数组
                 this.particleCreateTimeArr.push(Date.now());
-            }
-            else if (PARTICLE.shape == ShapeEnum.Hemisphere)
-            { 
-                
             }
         }
     }
@@ -212,7 +205,7 @@ export default class ParticleManager extends Manager {
             this.particleCreateTimeArr.shift();
         }
         // camera正前方向量
-        const tartgetPosCamera = this.camera.getWorldDirection(new THREE.Vector3());
+        const tartgetPosCamera = this.camera.getWorldDirection(this.vec3Zero);
 
         for (let i = 0; i < this.particleArr.length; i++) {
         // 每一个粒子对应的创建时间数组
@@ -237,8 +230,7 @@ export default class ParticleManager extends Manager {
                 obj.lookAt(targetYPos);
                 obj.rotation.z -= this.startRotation;
             } else if (this.PARTICLE.renderMode === RenderMode.Stretch) {
-                const targetYPos = new THREE.Vector3(obj.position.x - camera.position.x, obj.position.y - camera.position.y, obj.position.z - camera.position.z);
-                obj.lookAt(targetYPos);
+                obj.lookAt(this.camera.position);
             } else if (this.PARTICLE.renderMode === RenderMode.HorizontalBillboard) {
                 const targetYPos = new THREE.Vector3(world.x - this.objZero.x, world.y - this.objZero.y - Math.PI / 2, world.z - this.objZero.z);
                 obj.lookAt(targetYPos);

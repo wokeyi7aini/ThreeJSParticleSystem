@@ -3,10 +3,10 @@
 <head>
     <title>three.js</title>
     <script src="js/camera.js" type="module"></script>
-    <script src="js/fbxLoader.js" type="module"></script>
+    <!-- <script src="js/fbxLoader.js" type="module"></script> -->
+    <!-- <script src="js/skyboxTest copy.js" type="module"></script> -->
     <!-- <script src="js/main.js" type="module"></script> -->
-    <!-- <script src="js/particle.js" type="module"></script> -->
-    <script src="js/particle-Rain(Mesh-Tween).js" type="module"></script>
+    <script src="js/fasheqi.js" type="module"></script>
     <!-- <script src="js/MeshLine.js" type="module"></script> -->
     <!-- <script src="js/LineAnimation.js" type="module"></script> -->
     <style>
@@ -16,8 +16,37 @@
         }
     </style>
 </head>
-<script>
- 
+<script type="module">
+    import {ParticleManager} from './js/particle v2.0-rain.js';
+    import * as THREE from './libs/threejs/build/three.module.js';
+
+ function init(){
+    THREE.Cache.enabled = true;
+    const particleConfig  = new THREE.FileLoader();  
+    particleConfig.load("./particleSystemDatas.json",
+    // onLoad回调
+	function ( data ) {
+		// output the text to the console
+		console.log( data )
+	},
+
+	// onProgress回调
+	function ( xhr ) {
+		// console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+	},
+
+	// onError回调
+	function ( err ) {
+		// console.error( 'An error happened' );
+	});  
+    const particle = new ParticleManager(particleConfig);
+                    particle.camera = this.camera;
+                    particle.Scene = this.Scene;
+                    particle.init(materialTextureMap[particleConfig.texturePath].cdnPath);
+ }
+
+ init();
+
 </script>
 <body>
 </body>
