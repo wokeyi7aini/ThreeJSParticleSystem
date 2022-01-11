@@ -1,41 +1,42 @@
-import * as THREE from '../libs/threejs/build/three.module.js';
-import { FBXLoader } from '../libs/threejs/examples/jsm/loaders/FBXLoader.js';
-import {camera, scene, renderer} from './camera.js'
+import * as THREE from 'three';
+import Manager from './manager.js';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 
-init();
-animate();
+export default class FBXLoaderManager extends Manager {
+    constructor() {
+        super();
+    }
 
-function init() {
-    //灯光
-	// scene.add(new THREE.AmbientLight(0xB0B0B0));
-    var directionalLight = new THREE.DirectionalLight(0xB0B0B0, 1) //方向光
-    directionalLight.position.set(0,200,100);
-    directionalLight.rotation.set(0, 0,150);
-    scene.add(directionalLight)
+    Create() {
+        super.Create();
 
-    var loader = new FBXLoader();
-    loader.load( '../fbx/all.FBX', function ( object ) {
+        //灯光
+        // this.scene.add(new THREE.AmbientLight(0xB0B0B0));
+        var directionalLight = new THREE.DirectionalLight(0xB0B0B0, 1) //方向光
+        directionalLight.position.set(0,200,100);
+        directionalLight.rotation.set(0, 0,150);
+        this.scene.add(directionalLight)
 
-        object.traverse( function ( child ) {
+        const loader = new FBXLoader()
+        const path = require('../fbx/all.FBX')
+        loader.load(path, object => {
 
-            if ( child.isMesh ) {
+            object.traverse( function ( child ) {
 
-                child.castShadow = true;
-                child.receiveShadow = true;
+                if ( child.isMesh ) {
 
-            }
+                    child.castShadow = true;
+                    child.receiveShadow = true;
 
-        } );
+                }
 
-        object.position.set(0,-100,0);
-        object.rotation.set(-1.55817,0.01586,0.898854);
-        object.scale.set(0.5,0.5,0.5);
-        object.receiveShadow = true;
-        scene.add( object );
-    });
-}
- 
-function animate() {
+            } );
 
-    requestAnimationFrame( animate );
+            object.position.set(0,-100,0);
+            object.rotation.set(-1.55817,0.01586,0.898854);
+            object.scale.set(0.5,0.5,0.5);
+            object.receiveShadow = true;
+            this.scene.add( object );
+        })
+    }
 }

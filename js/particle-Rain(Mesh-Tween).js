@@ -1,4 +1,5 @@
-import * as THREE from '../libs/threejs/build/three.module.js';
+// import * as THREE from '../libs/threejs/build/three.module.js';
+import * as THREE from 'three';
 
 //对应U3DTransform
 let position = new THREE.Vector3(0,0,0), 

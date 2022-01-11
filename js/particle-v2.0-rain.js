@@ -1,5 +1,4 @@
-import * as THREE from '../libs/threejs/build/three.module.js';
-import {camera, scene, renderer} from './camera.js';
+import * as THREE from 'three';
 import Manager from './manager.js';
 // import * as PARTICLE from './particle-Sphere.js';
 // import * as PARTICLE from './particle-Cloud(Mesh).js';
@@ -134,7 +133,8 @@ init(texture) {
     this.MaxParticleCount = this.PARTICLE.startLifetime * this.PARTICLE.rateOverTime <= this.PARTICLE.maxParticles
         ? this.PARTICLE.startLifetime * this.PARTICLE.rateOverTime : this.PARTICLE.maxParticles;
     this.currentCount = 0;
-    this.texture = new THREE.TextureLoader().load(texture);
+    // this.texture = new THREE.TextureLoader().load(texture);
+    // console.log(this.texture);
     this.startTime = Date.now();
     this.intervalCount = parseInt(60 / this.PARTICLE.rateOverTime);
     if (this.intervalCount <= 0) this.intervalCount = 1;
@@ -174,13 +174,13 @@ init(texture) {
 ParticleMany(count) {
     this.currentCount += count;
 
-    // console.log("创建了"+count+"个,还剩"+currentCount+"个");
+    // console.log("创建了"+count+"个,还剩"+this.currentCount+"个");
     for (let i = count; i > 0; i--) {
-        if (PARTICLE.shape == ShapeEnum.Sphere)
+        /*if (this.PARTICLE.shape == ShapeEnum.Sphere)
         { 
             
         }
-        else if (this.PARTICLE.shape === ShapeEnum.Box) {
+        else */if (this.PARTICLE.shape === ShapeEnum.Box) {
             const obj = this.CreateMeshPlane();
             this.group.add(obj);
             obj.position.set((Math.random() - 0.5) * this.PARTICLE.ShapeScale.x,
@@ -191,10 +191,10 @@ ParticleMany(count) {
             // 每一个粒子对应的创建时间数组
             this.particleCreateTimeArr.push(Date.now());
         }
-        else if (PARTICLE.shape == ShapeEnum.Hemisphere)
+        /*else if (this.PARTICLE.shape == ShapeEnum.Hemisphere)
         { 
             
-        }
+        }*/
     }
 }
 
@@ -240,7 +240,7 @@ particleAnimation() {
             obj.lookAt(targetYPos);
             obj.rotation.z -= this.startRotation;
         } else if (this.PARTICLE.renderMode === RenderMode.Stretch) {
-            const targetYPos = new THREE.Vector3(obj.position.x - camera.position.x, obj.position.y - camera.position.y, obj.position.z - camera.position.z);
+            const targetYPos = new THREE.Vector3(obj.position.x - this.camera.position.x, obj.position.y - this.camera.position.y, obj.position.z - camera.position.z);
             obj.lookAt(targetYPos);
         } else if (this.PARTICLE.renderMode === RenderMode.HorizontalBillboard) {
             const targetYPos = new THREE.Vector3(world.x - this.objZero.x, world.y - this.objZero.y - Math.PI / 2, world.z - this.objZero.z);
@@ -252,6 +252,7 @@ particleAnimation() {
             obj.lookAt(targetYPos);
             obj.rotation.z -= this.startRotation;
         }
+        // console.log(obj.position.x+","+obj.position.y+","+obj.position.z)
     }
 }
 
