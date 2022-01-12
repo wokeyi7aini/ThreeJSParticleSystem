@@ -18,7 +18,7 @@ export default class FBXLoaderManager extends Manager {
         this.scene.add(directionalLight)
 
         const loader = new FBXLoader()
-        const path = require('../fbx/all.FBX')
+        const path = require('../../fbx/all.FBX')
         loader.load(path, object => {
 
             object.traverse( function ( child ) {

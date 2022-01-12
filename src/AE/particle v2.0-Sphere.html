@@ -51,7 +51,7 @@
 
         requestAnimationFrame( animate );
         TWEEN.update();
-        render();
+        production();
         particleAnimation();
     }
 
@@ -83,7 +83,7 @@
         }
     }
 
-    function render() {
+    function production() {
 
         let time = Date.now();
 

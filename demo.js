@@ -3,8 +3,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import CameraManager from './src/Utils/camera.js';
 import FBXLoaderManager from './src/Utils/fbxLoader.js';
+import FasheQiManager from './src/Utils/fasheqi.js';
 
-import ParticleManager from './src/AE/particle-v2.0-rain.js';
+import ParticleManager from './src/AE/particle-v2.0.js';
 import Particle from './src/Json/particleSystemDatas.js';
 
 let camera,renderer,scene,controls,stats, cameraManager,particle;
@@ -24,12 +25,13 @@ let camera,renderer,scene,controls,stats, cameraManager,particle;
     cameraManager.stats = stats;
     cameraManager.Create();
 
+    fbxLoader();
+    fasheqi();
+
     particle = new ParticleManager(Particle);
     particle.camera = camera;
     particle.Scene = scene;
     particle.init('./textures/arrows.png');
-    fbxLoader();
-
  }
 
  function animate() {
@@ -39,6 +41,11 @@ let camera,renderer,scene,controls,stats, cameraManager,particle;
 	particle.Update();
 }
 
+function fasheqi(){
+    const fasheqi = new FasheQiManager(Particle);
+    fasheqi.scene = scene;
+    fasheqi.Create();
+}
 
 function fbxLoader(){
     const fbx = new FBXLoaderManager();
