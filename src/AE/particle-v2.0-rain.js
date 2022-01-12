@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import Manager from './manager.js';
+import Manager from '../Utils/manager.js';
 // import * as PARTICLE from './particle-Sphere.js';
 // import * as PARTICLE from './particle-Cloud(Mesh).js';
 // import * as PARTICLE from './particle-Rain(Mesh-Tween).js';
@@ -133,8 +133,15 @@ init(texture) {
     this.MaxParticleCount = this.PARTICLE.startLifetime * this.PARTICLE.rateOverTime <= this.PARTICLE.maxParticles
         ? this.PARTICLE.startLifetime * this.PARTICLE.rateOverTime : this.PARTICLE.maxParticles;
     this.currentCount = 0;
-    // this.texture = new THREE.TextureLoader().load(texture);
+    this.texture = new THREE.TextureLoader().load(texture);
     // console.log(this.texture);
+    // var loader = new THREE.TextureLoader();
+    // loader.setCrossOrigin("Anonymous");
+    // // this.texture  = loader.load(texture);
+    // loader.load(texture, tex =>{
+    //     this.texture = tex;
+    // });
+
     this.startTime = Date.now();
     this.intervalCount = parseInt(60 / this.PARTICLE.rateOverTime);
     if (this.intervalCount <= 0) this.intervalCount = 1;

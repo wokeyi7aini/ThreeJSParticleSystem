@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-// import * as THREE from '../libs/threejs/build/three.module.js';
 import * as PARTICLE from './particle-Rain(Mesh-Tween).js';
 import {camera, scene, renderer} from './camera.js';
 

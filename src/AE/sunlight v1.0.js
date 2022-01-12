@@ -13,7 +13,7 @@ class Flare
 
 import * as THREE from '../libs/threejs/build/three.module.js';
 import { Lensflare, LensflareElement } from '../libs/threejs/examples/jsm/objects/Lensflare.js';
-import {camera, scene} from './camera.js'
+import {camera, scene} from './Utils/camera.js'
 
 let renderer;
 

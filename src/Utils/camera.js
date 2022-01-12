@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import Manager from './manager.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import Manager from './manager.js';
 
 export default class CameraManager extends Manager {
     constructor() {
