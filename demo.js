@@ -6,11 +6,13 @@ import FBXLoaderManager from './src/Utils/fbxLoader.js';
 import FasheQiManager from './src/Utils/fasheqi.js';
 
 import ParticleManager from './src/AE/particle-v2.0.js';
-import Particle from './src/Json/particleSystemDatas.js';
+import ParticleJson from './src/Json/particleSystemDatas.js';
 
 import LineAnimationManager from './src/AE/LineAnimation.js';
+import LineAnimationJson from './src/Json/LineAnimationDatas.js';
 
-let camera,renderer,scene,controls,stats, cameraManager,particle;
+let camera,renderer,scene,controls,stats,
+    cameraManager,particle,lineAnimation;
 
  function Init(){
     camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 210000 );
@@ -27,31 +29,34 @@ let camera,renderer,scene,controls,stats, cameraManager,particle;
     cameraManager.stats = stats;
     cameraManager.Create();
 
-    FbxLoader();
-    Fasheqi();
+    // FbxLoader();
+    // Fasheqi();
 
-    Particle();
-
+    // Particle();
+    LineAnimation();
 
  }
 
  function Animate() {
 
 	requestAnimationFrame( Animate );
-    cameraManager.Update();
-    if (Particle)
-	    Particle.Update();
+    if (cameraManager)
+        cameraManager.Update();
+    if (particle)
+        particle.Update();
+    if (lineAnimation)
+        lineAnimation.Update();
 }
 
 function Particle(){
-    Particle = new ParticleManager(Particle);
-    Particle.camera = camera;
-    Particle.Scene = scene;
-    Particle.Init('./textures/arrows.png');
+    particle = new ParticleManager(ParticleJson);
+    particle.camera = camera;
+    particle.Scene = scene;
+    particle.Init('./textures/arrows.png');
 }
 
 function Fasheqi(){
-    const fasheqi = new FasheQiManager(Particle);
+    const fasheqi = new FasheQiManager(ParticleJson);
     fasheqi.scene = scene;
     fasheqi.Create();
 }
@@ -63,7 +68,9 @@ function FbxLoader(){
 }
 
 function LineAnimation(){
-    const lineAnimation = new LineAnimationManager()
+    lineAnimation = new LineAnimationManager(LineAnimationJson)
+    lineAnimation.scene = scene;
+    lineAnimation.Init('./textures/line.png');
 }
 
  Init();
