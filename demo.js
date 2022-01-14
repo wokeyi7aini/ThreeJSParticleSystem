@@ -8,9 +8,11 @@ import FasheQiManager from './src/Utils/fasheqi.js';
 import ParticleManager from './src/AE/particle-v2.0.js';
 import Particle from './src/Json/particleSystemDatas.js';
 
+import LineAnimationManager from './src/AE/LineAnimation.js';
+
 let camera,renderer,scene,controls,stats, cameraManager,particle;
 
- function init(){
+ function Init(){
     camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 210000 );
     renderer = new THREE.WebGLRenderer( { antialias: true } );
     scene = new THREE.Scene();
@@ -25,33 +27,44 @@ let camera,renderer,scene,controls,stats, cameraManager,particle;
     cameraManager.stats = stats;
     cameraManager.Create();
 
-    fbxLoader();
-    fasheqi();
+    FbxLoader();
+    Fasheqi();
 
-    particle = new ParticleManager(Particle);
-    particle.camera = camera;
-    particle.Scene = scene;
-    particle.init('./textures/arrows.png');
+    Particle();
+
+
  }
 
- function animate() {
+ function Animate() {
 
-	requestAnimationFrame( animate );
+	requestAnimationFrame( Animate );
     cameraManager.Update();
-	particle.Update();
+    if (Particle)
+	    Particle.Update();
 }
 
-function fasheqi(){
+function Particle(){
+    Particle = new ParticleManager(Particle);
+    Particle.camera = camera;
+    Particle.Scene = scene;
+    Particle.Init('./textures/arrows.png');
+}
+
+function Fasheqi(){
     const fasheqi = new FasheQiManager(Particle);
     fasheqi.scene = scene;
     fasheqi.Create();
 }
 
-function fbxLoader(){
+function FbxLoader(){
     const fbx = new FBXLoaderManager();
     fbx.scene = scene;
     fbx.Create();
 }
 
- init();
- animate();
+function LineAnimation(){
+    const lineAnimation = new LineAnimationManager()
+}
+
+ Init();
+ Animate();

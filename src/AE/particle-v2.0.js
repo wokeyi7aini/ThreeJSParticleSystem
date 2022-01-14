@@ -28,13 +28,12 @@ export default class ParticleManager extends Manager {
         this.currentCount = 0;
         this.texture = null;
         this.speed = null;
-        this.PARTICLE = this.formatOption(PARTICLE); // 粒子配置解析
+        this.PARTICLE = this.FrmatOption(PARTICLE); // 粒子配置解析
 
         this.load = false;
         this.objZero = new THREE.Vector3();
         this.group = new THREE.Group();
         this.MaxParticleCount = 0;
-        this.particleCreateTimeArr = [];
 
         this.interval = 0;
         this.intervalCount = 0;
@@ -51,7 +50,7 @@ export default class ParticleManager extends Manager {
         this.particleCreateTimeArr = [];
     }
 
-    formatOption(PARTICLE) {
+    FrmatOption(PARTICLE) {
         PARTICLE.position = new THREE.Vector3(PARTICLE.position.x, PARTICLE.position.y, PARTICLE.position.z);
         PARTICLE.rotation = new THREE.Quaternion(PARTICLE.rotation.x, PARTICLE.rotation.y, PARTICLE.rotation.z, PARTICLE.rotation.w);
         PARTICLE.scale = new THREE.Vector3(PARTICLE.scale.x, PARTICLE.scale.y, PARTICLE.scale.z);
@@ -67,7 +66,7 @@ export default class ParticleManager extends Manager {
         return PARTICLE;
     }
 
-    production() {
+    Production() {
         if (this.newPerFrame <= 0) {
             this.interval++;
             if (this.interval % this.intervalCount !== 0) return;
@@ -83,9 +82,9 @@ export default class ParticleManager extends Manager {
         }
     }
 
-    animate() {
-        this.production();
-        this.particleAnimation();
+    Animate() {
+        this.Production();
+        this.ParticleAnimation();
     }
 
     // #region 下雨/雪
@@ -98,8 +97,8 @@ export default class ParticleManager extends Manager {
                 map: this.texture,
                 depthWrite: false,
                 side: THREE.DoubleSide,
-                color: new THREE.Color(new THREE.Color(this.PARTICLE.mainColorHex).convertSRGBToLinear()),
-                emissive: new THREE.Color(new THREE.Color(this.PARTICLE.emissiveColorHex).convertSRGBToLinear()),
+                color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
+                emissive: (new THREE.Color(this.emissiveColorHex)).convertSRGBToLinear(),
                 emissiveIntensity: 1,
                 transparent: true,
                 opacity: 1
@@ -109,9 +108,9 @@ export default class ParticleManager extends Manager {
                 map: this.texture,
                 depthWrite: false,
                 side: THREE.DoubleSide,
-                color: new THREE.Color(new THREE.Color(this.PARTICLE.mainColorHex).convertSRGBToLinear()),
-                // emissive: new THREE.Color(new THREE.Color(this.PARTICLE.mainColorHex).convertSRGBToLinear()),
-                // emissiveIntensity: 3,
+                color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
+                // emissive: (new THREE.Color(this.emissiveColorHex)).convertSRGBToLinear(),
+                // emissiveIntensity: 1,
                 transparent: true,
                 opacity: 1
             });
@@ -127,7 +126,7 @@ export default class ParticleManager extends Manager {
         return box;
     }
 
-    init(texture) {
+    Init(texture) {
         const group = new THREE.Group();
         // 最大粒子数 Particles=PARTICLE.startLifetime*PARTICLE.rateOverTime
         this.MaxParticleCount = this.PARTICLE.startLifetime * this.PARTICLE.rateOverTime <= this.PARTICLE.maxParticles
@@ -212,7 +211,7 @@ export default class ParticleManager extends Manager {
         }
     }
 
-    particleAnimation() {
+    ParticleAnimation() {
         const life = Date.now() - this.particleCreateTimeArr[0];
         // 没活够，但是粒子数量太多了，需要生成新的粒子了，就要把老的销毁了
         if ((this.particleArr.length >= this.MaxParticleCount
@@ -274,7 +273,7 @@ export default class ParticleManager extends Manager {
     }
 
     Update() {
-        this.animate();
+        this.Animate();
     }
 
     Destroy() {
