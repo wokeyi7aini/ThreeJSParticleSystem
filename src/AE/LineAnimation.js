@@ -20,7 +20,9 @@ export default class LineAnimationManager extends Manager {
         this.tilingY = LineAnimation.tilingY;
         this.tilingMoreX = LineAnimation.tilingMoreX;
         this.tilingMoreY = LineAnimation.tilingMoreY;
-        //偏移量
+        //偏移量 20圈以内，3JS跑得速度更快，耗时更短；20圈以外，U3D跑得更快，耗时更短
+        //21圈，3JS耗时34.95s,U3D耗时30.2s
+        //1圈，3JS耗时1.6s，U3D耗时1.8s, 时间差距不太大，暂时1比1
         this.offsetX = LineAnimation.offsetX;
         this.offsetY = LineAnimation.offsetY;
 
@@ -31,11 +33,17 @@ export default class LineAnimationManager extends Manager {
         this.loop = LineAnimation.loop;
         //是否首尾相连
         this.closed = LineAnimation.closed;
-        //管道转折点光滑度
-        this.tubularSegments = 1 + LineAnimation.numCornerVertices;
-        //管道切面顶点数 应该在U3D的数值上再加2
-        //在3JS端 数值为int类型且>=2，2为线条，3为三角形，4为正方形，数值越大越接近圆
-        this.radialSegments = 2 + LineAnimation.numCapVertices;
+        //管道张力[0, 1] 
+        this.tension = 0.01;
+        this.tubularSegments = 20;
+
+        let tension = LineAnimation.cornerVertices;
+        if (tension !== 0)
+        {
+            this.tension = (tension / 90.0) * 0.2;
+            this.tubularSegments = parseInt(20 + (500 * (tension / 90.0)));
+        }
+
         //坐标点，每3个为(x,y,z)一组
         this.pathArr = LineAnimation.pathArr;
 
@@ -55,22 +63,22 @@ export default class LineAnimationManager extends Manager {
 
     //粒子流光运动
     LineAnimation(){
-        let curveArr = []
+        let curveArr = [], 
+        material;
         // 三个一组取出curve数据
-        for(let i = 0; i < this.pathArr.length; i+=3) {
-            curveArr.push(new THREE.Vector3(this.pathArr[i], this.pathArr[i+1], this.pathArr[i+2]));
+        for(let i = 0; i < this.pathArr.length; i += 3) {
+            curveArr.push(new THREE.Vector3(-this.pathArr[i], this.pathArr[i + 1], this.pathArr[i + 2]));
         }
         if (this.closed) {
-            curveArr.push(new THREE.Vector3(this.pathArr[0], this.pathArr[1], this.pathArr[2]));
+            curveArr.push(new THREE.Vector3(-this.pathArr[0], this.pathArr[1], this.pathArr[2]));
         }
     
         // CatmullRomCurve3创建一条平滑的三维样条曲线
-        const curve = new THREE.CatmullRomCurve3(curveArr);
+        const curve = new THREE.CatmullRomCurve3(curveArr, this.closed, "catmullrom", this.tension);
         this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping; //每个都重复
         this.texture.repeat.set(this.tilingX, this.tilingY)
         this.texture.needsUpdate = true
     
-        let material;
         if (this.emissiveColorHex) {
             material = new THREE.MeshStandardMaterial({
                 map: this.texture,
@@ -95,8 +103,11 @@ export default class LineAnimationManager extends Manager {
     
         // 创建管道
         const tubeGeometry = new THREE.TubeGeometry(curve, this.tubularSegments, 
-            this.width, this.radialSegments, this.closed);
+            this.width * 0.25, 3, this.closed);
         const mesh = new THREE.Mesh(tubeGeometry, material);
+
+        //测试用的，管道本身
+        this.ForTest(tubeGeometry);
 
         if (!this.useWorldSpace)
         {
@@ -111,6 +122,7 @@ export default class LineAnimationManager extends Manager {
             this.group.rotation.copy(v);
         }
         this.group.add(mesh);
+        
         this.scene.add(this.group);
         this.load = true;
     }
@@ -119,24 +131,34 @@ export default class LineAnimationManager extends Manager {
         // 设置纹理偏移
         if ((this.texture && this.loop)
         || (((this.texture && !this.loop)
-        && Math.abs(this.texture.offset.x - this.offsetInitX) < 1 + this.tilingMoreX)
-        && Math.abs(this.texture.offset.y - this.offsetInitY) < 1 + this.tilingMoreY))
+        && (Math.abs(this.texture.offset.x - this.offsetInitX) < 1 + this.tilingMoreX))
+        && (Math.abs(this.texture.offset.y - this.offsetInitY) < 1 + this.tilingMoreY)))
         {
-            this.texture.offset.x += (this.offsetX / 4.9);
-            this.texture.offset.y += (this.offsetY / 4.9);
+            this.texture.offset.x += this.offsetX;
+            this.texture.offset.y += this.offsetY;
         }
         else if (((this.texture && !this.loop)
-        && Math.abs(this.texture.offset.x - this.offsetInitX) >= 1 + this.tilingMoreX)
-        && Math.abs(this.texture.offset.y - this.offsetInitY) < 1 + this.tilingMoreY)
+        && (Math.abs(this.texture.offset.x - this.offsetInitX) >= 1 + this.tilingMoreX))
+        && (Math.abs(this.texture.offset.y - this.offsetInitY) < 1 + this.tilingMoreY))
         {
-            this.texture.offset.y += (this.offsetY / 4.9);
+            this.texture.offset.y += this.offsetY;
         }
         else if (((this.texture && !this.loop)
-        && Math.abs(this.texture.offset.x - this.offsetInitX) < 1 + this.tilingMoreX)
-        && Math.abs(this.texture.offset.y - this.offsetInitY) >= 1 + this.tilingMoreY)
+        && (Math.abs(this.texture.offset.x - this.offsetInitX) < 1 + this.tilingMoreX))
+        && (Math.abs(this.texture.offset.y - this.offsetInitY) >= 1 + this.tilingMoreY))
         {
-            this.texture.offset.x += (this.offsetX / 4.9);
+            this.texture.offset.x += this.offsetX;
         }
+    }
+    
+    ForTest(tubeGeometry){
+        let material = new THREE.MeshStandardMaterial({ 
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.1
+        });
+        let mesh =  new THREE.Mesh(tubeGeometry, material);
+        this.group.add(mesh);
     }
 
     Destroy() {

@@ -1,9 +1,9 @@
 export default 
 {
     "position":{
-        "x":0,
-        "y":0,
-        "z":0
+        "x":150,
+        "y":152,
+        "z":448
     },
     "rotation":{
         "x":0,
@@ -14,22 +14,24 @@ export default
     "texturePath":"31b542f8fe2a4c8498cb7fdd80a32883",
     "offsetInitX":0,
     "offsetInitY":0,
-    "tilingX":5,
+    "tilingX":1,
     "tilingY":1,
     "tilingMoreX":2,
     "tilingMoreY":1,
-    "offsetX":-0.01,
-    "offsetY":0.01,
+    "offsetX":-0.002,
+    "offsetY":0,
     "width":50,
     "useWorldSpace":true,
-    "loop":true,
+    "loop":false,
     "closed":false,
-    "numCornerVertices":0,
-    "numCapVertices":0,
+    "cornerVertices":1,
     "pathArr":[
         0,0,0,
-        500,500,0
-        ,0,500,0
+        300,0,0,
+        300,0,300,
+        0,0,300,
+        0,0,0,
+        -300,0,0
     ],
     "mainColor":"0xFF0011",
     "emissiveColor":null

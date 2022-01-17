@@ -132,14 +132,7 @@ export default class ParticleManager extends Manager {
         this.MaxParticleCount = this.PARTICLE.startLifetime * this.PARTICLE.rateOverTime <= this.PARTICLE.maxParticles
             ? this.PARTICLE.startLifetime * this.PARTICLE.rateOverTime : this.PARTICLE.maxParticles;
         this.currentCount = 0;
-        // this.texture = new THREE.TextureLoader().load(texture);
-        // console.log(this.texture);
-        // var loader = new THREE.TextureLoader();
-        // loader.setCrossOrigin("Anonymous");
-        // // this.texture  = loader.load(texture);
-        // loader.load(texture, tex =>{
-        //     this.texture = tex;
-        // });
+        this.texture = new THREE.TextureLoader().load(texture);
 
         this.startTime = Date.now();
         this.intervalCount = parseInt(60 / this.PARTICLE.rateOverTime);

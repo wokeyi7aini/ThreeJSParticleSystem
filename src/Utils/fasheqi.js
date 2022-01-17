@@ -64,9 +64,6 @@ export default class FasheQiManager extends Manager {
         mesh.rotation.copy( v );
         
         this.scene.add(mesh);
-
-        var axis = new THREE.AxesHelper(800);
-        this.scene.add(axis);
     };
 
 }

@@ -29,6 +29,9 @@ let camera,renderer,scene,controls,stats,
     cameraManager.stats = stats;
     cameraManager.Create();
 
+    // var axis = new THREE.AxesHelper(800);
+    // scene.add(axis);
+
     // FbxLoader();
     // Fasheqi();
 
@@ -52,7 +55,8 @@ function Particle(){
     particle = new ParticleManager(ParticleJson);
     particle.camera = camera;
     particle.Scene = scene;
-    particle.Init('./textures/arrows.png');
+    const Texturing = require('./textures/arrows.png')
+    particle.Init(Texturing);
 }
 
 function Fasheqi(){
@@ -70,7 +74,8 @@ function FbxLoader(){
 function LineAnimation(){
     lineAnimation = new LineAnimationManager(LineAnimationJson)
     lineAnimation.scene = scene;
-    lineAnimation.Init('./textures/line.png');
+    const Texturing = require('./textures/arrows_n.png')
+    lineAnimation.Init(Texturing);
 }
 
  Init();
