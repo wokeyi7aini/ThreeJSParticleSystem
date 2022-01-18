@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { MathUtils } from 'three';
-import Manager from './manager.js';
+import Manager from './manager';
 
 const ShapeEnum = Object.freeze({
     Sphere: 'Sphere',

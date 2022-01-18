@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import Manager from './manager.js';
+import Manager from './manager';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 
 export default class FBXLoaderManager extends Manager {

@@ -1,15 +1,16 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
-import CameraManager from './src/Utils/camera.js';
-import FBXLoaderManager from './src/Utils/fbxLoader.js';
-import FasheQiManager from './src/Utils/fasheqi.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import Stats from 'three/examples/jsm/libs/stats.module';
+import CameraManager from './src/Utils/camera';
+import FBXLoaderManager from './src/Utils/fbxLoader';
+import FasheQiManager from './src/Utils/fasheqi';
+import SkyboxManager from './src/Utils/skyboxTest';
 
-import ParticleManager from './src/AE/particle-v2.0.js';
-import ParticleJson from './src/Json/particleSystemDatas.js';
+import ParticleManager from './src/AE/particle-v2.0';
+import ParticleJson from './src/Json/particleSystemDatas';
 
-import LineAnimationManager from './src/AE/LineAnimation.js';
-import LineAnimationJson from './src/Json/LineAnimationDatas.js';
+import LineAnimationManager from './src/AE/LineAnimation';
+import LineAnimationJson from './src/Json/LineAnimationDatas';
 
 let camera,renderer,scene,controls,stats,
     cameraManager,particle,lineAnimation;
@@ -34,6 +35,7 @@ let camera,renderer,scene,controls,stats,
 
     // FbxLoader();
     // Fasheqi();
+    Skybox();
 
     // Particle();
     LineAnimation();
@@ -69,6 +71,12 @@ function FbxLoader(){
     const fbx = new FBXLoaderManager();
     fbx.scene = scene;
     fbx.Create();
+}
+
+function Skybox(){
+    const skybox = new SkyboxManager();
+    skybox.scene = scene;
+    skybox.Init();
 }
 
 function LineAnimation(){
