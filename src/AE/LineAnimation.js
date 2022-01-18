@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import Manager from '../Utils/manager.js';
+import Manager from '../Utils/manager';
 
 export default class LineAnimationManager extends Manager {
 
@@ -27,25 +27,27 @@ export default class LineAnimationManager extends Manager {
         this.offsetY = LineAnimation.offsetY;
 
         //对应U3D 流光粗细
-        this.width = LineAnimation.width;
+        this.width = LineAnimation.width * 0.25;
         this.useWorldSpace = LineAnimation.useWorldSpace;
         //是否重复播放
         this.loop = LineAnimation.loop;
         //是否首尾相连
         this.closed = LineAnimation.closed;
-        //管道张力[0, 1] 
-        this.tension = 0.01;
-        this.tubularSegments = 20;
-
-        let tension = LineAnimation.cornerVertices;
-        if (tension !== 0)
-        {
-            this.tension = (tension / 90.0) * 0.2;
-            this.tubularSegments = parseInt(20 + (500 * (tension / 90.0)));
-        }
-
+        
         //坐标点，每3个为(x,y,z)一组
         this.pathArr = LineAnimation.pathArr;
+
+        this.cornerVertices = LineAnimation.cornerVertices;
+
+        if (!this.closed)
+            this.tubularSegments = ((this.pathArr.length / 3) - 1) * 4;
+        else
+            this.tubularSegments = (this.pathArr.length / 3) * 4;
+
+        if (this.cornerVertices !== 0)
+            this.tubularSegments *= (this.cornerVertices + 1);
+        if (this.tubularSegments > 1000)
+            this.tubularSegments = 1000;
 
          //自发光颜色
          if (LineAnimation.mainColor) {
@@ -61,8 +63,13 @@ export default class LineAnimationManager extends Manager {
         this.LineAnimation();
     }
 
-    //粒子流光运动
     LineAnimation(){
+        //至少要2个点才行
+        if (this.pathArr.length <= 6) {
+            console.log("数组个数不够!");
+            return;
+        }
+
         let curveArr = [], 
         material;
         // 三个一组取出curve数据
@@ -73,8 +80,6 @@ export default class LineAnimationManager extends Manager {
             curveArr.push(new THREE.Vector3(-this.pathArr[0], this.pathArr[1], this.pathArr[2]));
         }
     
-        // CatmullRomCurve3创建一条平滑的三维样条曲线
-        const curve = new THREE.CatmullRomCurve3(curveArr, this.closed, "catmullrom", this.tension);
         this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping; //每个都重复
         this.texture.repeat.set(this.tilingX, this.tilingY)
         this.texture.needsUpdate = true
@@ -88,7 +93,9 @@ export default class LineAnimationManager extends Manager {
                 emissive: (new THREE.Color(this.emissiveColorHex)).convertSRGBToLinear(),
                 emissiveIntensity: 1,
                 transparent: true,
-                opacity: 1
+                opacity: 1,
+                //不受环境影响本身颜色
+                envMapIntensity: 0
             });
         } else {
             material = new THREE.MeshStandardMaterial({
@@ -97,21 +104,31 @@ export default class LineAnimationManager extends Manager {
                 side: THREE.DoubleSide,
                 color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
                 transparent: true,
-                opacity: 1
+                opacity: 1,
+                //不受环境影响本身颜色
+                envMapIntensity: 0
             });
         }
     
+        let tension;
+        if (this.cornerVertices === 0)
+            tension = 0.01;
+        else if (this.cornerVertices <= 2)
+            tension =  0.05 + ((this.tubularSegments / 1000.0) * 0.05);
+        else
+            tension = 0.1 + ((this.tubularSegments / 1000.0) * 0.05); 
+        // CatmullRomCurve3创建一条平滑的三维样条曲线
+        const curve = new THREE.CatmullRomCurve3(curveArr, this.closed, "catmullrom", tension);
         // 创建管道
         const tubeGeometry = new THREE.TubeGeometry(curve, this.tubularSegments, 
-            this.width * 0.25, 3, this.closed);
+            this.width, 3, this.closed);
         const mesh = new THREE.Mesh(tubeGeometry, material);
 
         //测试用的，管道本身
         this.ForTest(tubeGeometry);
 
-        if (!this.useWorldSpace)
-        {
-            this.group.position.set(-this.position.x, this.position.y, this.position.z);
+        if (!this.useWorldSpace) {
+            this.group.position.set(-this.position.x, this.position.y + this.width * 0.5, this.position.z);
             // 旋转值在效果测试时，发现需要左手坐标系转右手坐标系
             const q = new THREE.Quaternion(-this.rotation.x, 
                 this.rotation.y, this.rotation.z, -this.rotation.w),
@@ -120,6 +137,9 @@ export default class LineAnimationManager extends Manager {
             v.y += Math.PI; // Y is 180 degrees off
             v.z *= -1; // flip Z
             this.group.rotation.copy(v);
+        }
+        else {
+            this.group.position.set(0, this.width * 0.5, 0);
         }
         this.group.add(mesh);
         
@@ -134,26 +154,26 @@ export default class LineAnimationManager extends Manager {
         && (Math.abs(this.texture.offset.x - this.offsetInitX) < 1 + this.tilingMoreX))
         && (Math.abs(this.texture.offset.y - this.offsetInitY) < 1 + this.tilingMoreY)))
         {
-            this.texture.offset.x += this.offsetX;
-            this.texture.offset.y += this.offsetY;
+            this.texture.offset.x += this.offsetX * 0.59;
+            this.texture.offset.y += this.offsetY * 0.59;
         }
         else if (((this.texture && !this.loop)
         && (Math.abs(this.texture.offset.x - this.offsetInitX) >= 1 + this.tilingMoreX))
         && (Math.abs(this.texture.offset.y - this.offsetInitY) < 1 + this.tilingMoreY))
         {
-            this.texture.offset.y += this.offsetY;
+            this.texture.offset.y += this.offsetY * 0.59;
         }
         else if (((this.texture && !this.loop)
         && (Math.abs(this.texture.offset.x - this.offsetInitX) < 1 + this.tilingMoreX))
         && (Math.abs(this.texture.offset.y - this.offsetInitY) >= 1 + this.tilingMoreY))
         {
-            this.texture.offset.x += this.offsetX;
+            this.texture.offset.x += this.offsetX * 0.59;
         }
     }
     
     ForTest(tubeGeometry){
         let material = new THREE.MeshStandardMaterial({ 
-            color: 0x000000,
+            color: 0xffffff,
             transparent: true,
             opacity: 0.1
         });

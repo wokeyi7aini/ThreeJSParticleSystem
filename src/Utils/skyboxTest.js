@@ -23,16 +23,7 @@ export default class SkyboxManager extends Manager {
                 d,
                 f,
                b
-            ],
-            function onLoad (text){
-                console.log("onLoad ");
-            },
-            function onProgress (text){
-                console.log("onProgress ");
-            },
-            function onError (text){
-                console.log("onError ");
-            } );
+            ]);
         this.scene.background.encoding = THREE.sRGBEncoding;
     }
 }
