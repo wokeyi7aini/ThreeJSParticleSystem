@@ -13,7 +13,8 @@ import LineAnimationManager from './src/AE/LineAnimation';
 import LineAnimationJson from './src/Json/LineAnimationDatas';
 
 let camera,renderer,scene,controls,stats,
-    cameraManager,particle,lineAnimation;
+    cameraManager,particle;
+let lineAnimationArr = [];
 
  function Init(){
     camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 210000 );
@@ -49,8 +50,9 @@ let camera,renderer,scene,controls,stats,
         cameraManager.Update();
     if (particle)
         particle.Update();
-    if (lineAnimation)
-        lineAnimation.Update();
+    for (let i = 0; i < lineAnimationArr.length; i++) {
+        lineAnimationArr[i].Update();
+    }
 }
 
 function Particle(){
@@ -80,10 +82,14 @@ function Skybox(){
 }
 
 function LineAnimation(){
-    lineAnimation = new LineAnimationManager(LineAnimationJson)
-    lineAnimation.scene = scene;
-    const Texturing = require('./textures/arrows_n.png')
-    lineAnimation.Init(Texturing);
+    LineAnimationJson.datas.forEach(line => {
+        const lineAnimation = new LineAnimationManager(line)
+        lineAnimation.scene = scene;
+        const Texturing = require('./textures/line.png')
+        lineAnimation.Init(Texturing);
+
+        lineAnimationArr.push(lineAnimation);
+    });
 }
 
  Init();

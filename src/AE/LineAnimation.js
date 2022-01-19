@@ -65,7 +65,7 @@ export default class LineAnimationManager extends Manager {
 
     LineAnimation(){
         //至少要2个点才行
-        if (this.pathArr.length <= 6) {
+        if (this.pathArr.length < 6) {
             console.log("数组个数不够!");
             return;
         }
@@ -74,10 +74,16 @@ export default class LineAnimationManager extends Manager {
         material;
         // 三个一组取出curve数据
         for(let i = 0; i < this.pathArr.length; i += 3) {
-            curveArr.push(new THREE.Vector3(-this.pathArr[i], this.pathArr[i + 1], this.pathArr[i + 2]));
+            if (!this.useWorldSpace)
+                curveArr.push(new THREE.Vector3(this.pathArr[i], this.pathArr[i + 1], this.pathArr[i + 2]));
+            else
+                curveArr.push(new THREE.Vector3(-this.pathArr[i], this.pathArr[i + 1], this.pathArr[i + 2]));
         }
         if (this.closed) {
-            curveArr.push(new THREE.Vector3(-this.pathArr[0], this.pathArr[1], this.pathArr[2]));
+            if (!this.useWorldSpace)
+                curveArr.push(new THREE.Vector3(this.pathArr[0], this.pathArr[1], this.pathArr[2]));
+            else
+                curveArr.push(new THREE.Vector3(-this.pathArr[0], this.pathArr[1], this.pathArr[2]));
         }
     
         this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping; //每个都重复
@@ -93,9 +99,7 @@ export default class LineAnimationManager extends Manager {
                 emissive: (new THREE.Color(this.emissiveColorHex)).convertSRGBToLinear(),
                 emissiveIntensity: 1,
                 transparent: true,
-                opacity: 1,
-                //不受环境影响本身颜色
-                envMapIntensity: 0
+                opacity: 1
             });
         } else {
             material = new THREE.MeshStandardMaterial({
@@ -104,9 +108,7 @@ export default class LineAnimationManager extends Manager {
                 side: THREE.DoubleSide,
                 color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
                 transparent: true,
-                opacity: 1,
-                //不受环境影响本身颜色
-                envMapIntensity: 0
+                opacity: 1
             });
         }
     
@@ -121,14 +123,13 @@ export default class LineAnimationManager extends Manager {
         const curve = new THREE.CatmullRomCurve3(curveArr, this.closed, "catmullrom", tension);
         // 创建管道
         const tubeGeometry = new THREE.TubeGeometry(curve, this.tubularSegments, 
-            this.width, 3, this.closed);
+            this.width, 20, this.closed);
         const mesh = new THREE.Mesh(tubeGeometry, material);
 
         //测试用的，管道本身
         this.ForTest(tubeGeometry);
 
         if (!this.useWorldSpace) {
-            this.group.position.set(-this.position.x, this.position.y + this.width * 0.5, this.position.z);
             // 旋转值在效果测试时，发现需要左手坐标系转右手坐标系
             const q = new THREE.Quaternion(-this.rotation.x, 
                 this.rotation.y, this.rotation.z, -this.rotation.w),
@@ -137,8 +138,10 @@ export default class LineAnimationManager extends Manager {
             v.y += Math.PI; // Y is 180 degrees off
             v.z *= -1; // flip Z
             this.group.rotation.copy(v);
+            this.group.position.set(-this.position.x, this.position.y + this.width * 0.5, this.position.z);
         }
         else {
+            this.group.rotation.copy(new THREE.Vector3(0,0,0));
             this.group.position.set(0, this.width * 0.5, 0);
         }
         this.group.add(mesh);
