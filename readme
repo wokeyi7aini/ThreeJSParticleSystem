@@ -1,5 +1,12 @@
-发包
+【发包】
+项目地址：https://www.npmjs.com/
+项目：three-effect
+账号：huangqiuyan
+邮箱：huangqiuyan@yushu.biz
+密码：Cctv@123@123
 
+
+【发包步骤】
 《index.js》 加入需要导出的类/脚本
 《package.json》 "version"修改版本号
 终端 npm run build
