@@ -1,8 +1,5 @@
 import * as THREE from 'three';
 import Manager from '../Utils/manager';
-// import * as PARTICLE from './particle-Sphere.js';
-// import * as PARTICLE from './particle-Cloud(Mesh).js';
-// import * as PARTICLE from './particle-Rain(Mesh-Tween).js';
 
 const ShapeEnum = Object.freeze({
     Sphere: 'Sphere',

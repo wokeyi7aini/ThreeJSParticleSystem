@@ -1,11 +1,12 @@
 {
-  "name": "threejs",
+  "name": "three-effect",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "public/main.js",
   "scripts": {
-    "dev": "parcel demo.html --open --port 9090",
+    "dev": "parcel src/demo.html --open --port 9090",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack --config config/webpack.config.js"
+    "start": "webpack --config webpack.config.js",
+    "build": "webpack --profile --progress --mode=production --config webpack.config.prd.js"
   },
   "keywords": [],
   "author": "",
@@ -48,6 +49,7 @@
     "eslint-plugin-class-property": "^1.1.0",
     "eslint-plugin-import": "2.22.0",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
+    "file-loader": "^6.2.0",
     "html-webpack-plugin": "^3.2.0",
     "lerna": "^4.0.0",
     "less": "^3.0.1",

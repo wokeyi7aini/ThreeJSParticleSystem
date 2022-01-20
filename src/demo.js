@@ -1,16 +1,16 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import Stats from 'three/examples/jsm/libs/stats.module';
-import CameraManager from './src/Utils/camera';
-import FBXLoaderManager from './src/Utils/fbxLoader';
-import FasheQiManager from './src/Utils/fasheqi';
-import SkyboxManager from './src/Utils/skyboxTest';
+import CameraManager from './Utils/camera';
+import FBXLoaderManager from './Utils/fbxLoader';
+import FasheQiManager from './Utils/fasheqi';
+import SkyboxManager from './Utils/skyboxTest';
 
-import ParticleManager from './src/AE/particle';
-import ParticleJson from './src/Json/particleSystemDatas';
+import ParticleManager from './AE/particle';
+import ParticleJson from './Json/particleSystemDatas';
 
-import LineAnimationManager from './src/AE/LineAnimation';
-import LineAnimationJson from './src/Json/LineAnimationDatas';
+import LineAnimationManager from './AE/LineAnimation';
+import LineAnimationJson from './Json/LineAnimationDatas';
 
 let camera,renderer,scene,controls,stats,
     cameraManager,particle;
@@ -36,7 +36,7 @@ let lineAnimationArr = [];
 
     // FbxLoader();
     // Fasheqi();
-    Skybox();
+    // Skybox();
 
     // Particle();
     LineAnimation();
@@ -59,7 +59,7 @@ function Particle(){
     particle = new ParticleManager(ParticleJson);
     particle.camera = camera;
     particle.Scene = scene;
-    const Texturing = require('./textures/arrows.png')
+    const Texturing = require('../textures/arrows.png')
     particle.Init(Texturing);
 }
 
@@ -85,7 +85,7 @@ function LineAnimation(){
     LineAnimationJson.datas.forEach(line => {
         const lineAnimation = new LineAnimationManager(line)
         lineAnimation.scene = scene;
-        const Texturing = require('./textures/line.png')
+        const Texturing = require('../textures/line.png')
         lineAnimation.Init(Texturing);
 
         lineAnimationArr.push(lineAnimation);
