@@ -6,7 +6,7 @@ import FBXLoaderManager from './src/Utils/fbxLoader';
 import FasheQiManager from './src/Utils/fasheqi';
 import SkyboxManager from './src/Utils/skyboxTest';
 
-import ParticleManager from './src/AE/particle-v2.0';
+import ParticleManager from './src/AE/particle';
 import ParticleJson from './src/Json/particleSystemDatas';
 
 import LineAnimationManager from './src/AE/LineAnimation';

@@ -1,4 +1,4 @@
-import ParticleManager from './src/AE/particle-v2.0-rain';
+import ParticleManager from './src/AE/particle-rain';
 
 
 export default {
