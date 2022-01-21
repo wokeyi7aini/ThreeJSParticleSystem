@@ -12,6 +12,9 @@ import ParticleJson from './Json/particleSystemDatas';
 import LineAnimationManager from './AE/LineAnimation';
 import LineAnimationJson from './Json/LineAnimationDatas';
 
+import LightFlareManager from './AE/LightFlare';
+import LightFlareDatas from './Json/LightFlareDatas';
+
 let camera,renderer,scene,controls,stats,
     cameraManager,particle;
 let lineAnimationArr = [];
@@ -39,8 +42,8 @@ let lineAnimationArr = [];
     // Skybox();
 
     // Particle();
-    LineAnimation();
-
+    // LineAnimation();
+    LightFlare();
  }
 
  function Animate() {
@@ -90,6 +93,16 @@ function LineAnimation(){
 
         lineAnimationArr.push(lineAnimation);
     });
+}
+
+function LightFlare(){
+    let directionalLight = new THREE.DirectionalLight(0xffffff);
+    directionalLight.position.set(0, 100, -50);
+    scene.add(directionalLight);
+
+    const light = new LightFlareManager(LightFlareDatas.datas);
+    light.light = directionalLight;
+    light.Init();
 }
 
  Init();

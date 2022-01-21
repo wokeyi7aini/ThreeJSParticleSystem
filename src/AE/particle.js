@@ -267,7 +267,7 @@ export default class ParticleManager extends Manager {
     }
 
     Destroy() {
-
+        this.scene.remove(this.group);
     }
 
     Create() {
