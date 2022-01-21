@@ -127,7 +127,7 @@ export default class LineAnimationManager extends Manager {
         const mesh = new THREE.Mesh(tubeGeometry, material);
 
         //测试用的，管道本身
-        this.ForTest(tubeGeometry);
+        // this.ForTest(tubeGeometry);
 
         if (!this.useWorldSpace) {
             // 旋转值在效果测试时，发现需要左手坐标系转右手坐标系

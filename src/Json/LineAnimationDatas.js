@@ -1,6 +1,6 @@
 export default 
 {
-    "datas":[
+    "lineAnimationDatas":[
         {
             "position":{
                 "x":-669,

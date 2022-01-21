@@ -1,7 +1,7 @@
 import ParticleManager from  "./AE/particle";
 import LineAnimationManager from "./AE/LineAnimation";
 
-export default {
+export {
     ParticleManager,
     LineAnimationManager
 }

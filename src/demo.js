@@ -82,7 +82,7 @@ function Skybox(){
 }
 
 function LineAnimation(){
-    LineAnimationJson.datas.forEach(line => {
+    LineAnimationJson.lineAnimationDatas.forEach(line => {
         const lineAnimation = new LineAnimationManager(line)
         lineAnimation.scene = scene;
         const Texturing = require('../textures/line.png')
