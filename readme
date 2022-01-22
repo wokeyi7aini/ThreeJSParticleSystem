@@ -10,5 +10,5 @@
 《index.js》 加入需要导出的类/脚本
 《package.json》 "version"修改版本号
 终端 npm run build
-终端 npm login
+//可选 终端 npm login
 终端 npm publish

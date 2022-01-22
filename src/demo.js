@@ -21,7 +21,7 @@ let lineAnimationArr = [];
 
  function Init(){
     camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 210000 );
-    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer = new THREE.WebGLRenderer( { antialias: true, alpha:false } );
     scene = new THREE.Scene();
     controls = new OrbitControls( camera, renderer.domElement );
     stats = new Stats();
@@ -39,7 +39,7 @@ let lineAnimationArr = [];
 
     // FbxLoader();
     // Fasheqi();
-    // Skybox();
+    Skybox();
 
     // Particle();
     // LineAnimation();
@@ -99,6 +99,10 @@ function LightFlare(){
     let directionalLight = new THREE.DirectionalLight(0xffffff);
     directionalLight.position.set(0, 100, -50);
     scene.add(directionalLight);
+
+    for (let i = 0; i < LightFlareDatas.datas.length; i++) {
+        LightFlareDatas.datas[i].texture = require('../textures/lensflare3.png')
+    }
 
     const light = new LightFlareManager(LightFlareDatas.datas);
     light.light = directionalLight;

@@ -22,19 +22,19 @@ export default
         {
             "texture":"../../textures/lensflare3.png",
             "size":30,
-            "distance":0,
+            "distance":0.1,
             "color":"0x0026FF"
         },
         {
             "texture":"../../textures/lensflare3.png",
             "size":50,
-            "distance":0,
+            "distance":0.2,
             "color":"0x00F2FF"
         },
         {
             "texture":"../../textures/lensflare3.png",
             "size":25,
-            "distance":0,
+            "distance":0.3,
             "color":"0xFFFE00"
         }
     ]

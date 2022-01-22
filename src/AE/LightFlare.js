@@ -33,9 +33,7 @@ export default class LightFlareManager extends Manager {
         // this.renderer.shadowMap.enabled = true;
 
         this.flares.forEach(item => {
-            const texturing = require('../../textures/lensflare3.png');
-            // const texturing = item.texture;
-            const texture = new THREE.TextureLoader().load(texturing);
+            const texture = new THREE.TextureLoader().load(item.texture);
             //                                               贴图    大小        距离
             this.lensflare.addElement(new LensflareElement(texture, item.size, item.distance, item.color));
         });
@@ -55,7 +53,16 @@ export default class LightFlareManager extends Manager {
     }
 
     Destroy() {
+        //修改了three的原生脚本
         this.lensflare.deletedElement();
+        /*
+        找到“three/examples/jsm/objects/Lensflare.js”脚本，“class Lensflare”类中增加：
+        this.deletedElement = function ( ) {
+            for ( let i = 0, l = elements.length; i < l; i ++ ) {
+                elements.shift( );
+            }
+        };
+        */
     }
 
     Create() {
