@@ -37,13 +37,13 @@ let lineAnimationArr = [];
     // var axis = new THREE.AxesHelper(800);
     // scene.add(axis);
 
-    // FbxLoader();
+    FbxLoader();
     // Fasheqi();
     Skybox();
 
-    // Particle();
+    Particle();
     // LineAnimation();
-    LightFlare();
+    // LightFlare();
  }
 
  function Animate() {
@@ -62,7 +62,7 @@ function Particle(){
     particle = new ParticleManager(ParticleJson);
     particle.camera = camera;
     particle.Scene = scene;
-    const Texturing = require('../textures/arrows.png')
+    const Texturing = require('../textures/rain.png')
     particle.Init(Texturing);
 }
 
