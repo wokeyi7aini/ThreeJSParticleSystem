@@ -1,6 +1,6 @@
 {
   "name": "three-effect",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "public/main.js",
   "scripts": {
     "dev": "parcel src/demo.html --open --port 9090",
@@ -20,8 +20,7 @@
     "g": "^2.0.1",
     "js": "^0.1.0",
     "lodash": "^4.17.21",
-    "stats.js": "^0.17.0",
-    "three": "0.128.0"
+    "stats.js": "^0.17.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.14.8",
@@ -56,6 +55,7 @@
     "less-loader": "^4.1.0",
     "parcel-bundler": "^1.6.1",
     "style-loader": "^0.20.3",
+    "three": "^0.135.0",
     "ts-loader": "8.2.0",
     "typescript": "^4.4.4",
     "uglifyjs-webpack-plugin": "^2.2.0",
@@ -73,5 +73,5 @@
     "url": "https://github.com/wokeyi7aini/ThreeJSParticleSystem/issues"
   },
   "homepage": "https://github.com/wokeyi7aini/ThreeJSParticleSystem#readme",
-  "description": ""
+  "description": "【发包】\r 项目地址：https://www.npmjs.com/\r 项目：three-effect\r 账号：huangqiuyan\r 邮箱：huangqiuyan@yushu.biz\r 密码：Cctv@123@123"
 }
