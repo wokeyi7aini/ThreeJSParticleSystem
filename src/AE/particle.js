@@ -31,7 +31,10 @@ export default class ParticleManager extends Manager {
         this.objZero = new THREE.Vector3();
         this.group = new THREE.Group();
         this.MaxParticleCount = 0;
+        // camera正前方向量
+        this.tartgetPosCamera = null;
 
+        //创建粒子间隙时间
         this.interval = 0;
         this.intervalCount = 0;
         // 创建粒子数量
@@ -73,18 +76,19 @@ export default class ParticleManager extends Manager {
         if (this.currentCount < this.MaxParticleCount
             && (this.PARTICLE.looping
             || (!this.PARTICLE.looping && time - this.startTime < ((this.PARTICLE.duration * 1000) / this.PARTICLE.playbackSpeed))
-            )
-        ) {
-            this.ParticleMany(this.newCount);
+            )) {
+            this.ParticleMany(this.newCount, Date.now());
         }
     }
 
     Animate() {
+        if (!this.load) return;
+        this.tartgetPosCamera = this.camera.getWorldDirection(new THREE.Vector3());
+        
         this.Production();
         this.ParticleAnimation();
     }
 
-    // #region 下雨/雪
     // 生产粒子
     CreateMeshPlane() {
         let material,
@@ -148,9 +152,6 @@ export default class ParticleManager extends Manager {
 
         this.startRotation = THREE.MathUtils.degToRad(this.PARTICLE.startRotation);
 
-        // 预热，先发射所有的粒子
-        if (this.PARTICLE.prewarm) { this.ParticleMany(this.MaxParticleCount); }
-
         group.scale.set(this.PARTICLE.scale.x, this.PARTICLE.scale.y, this.PARTICLE.scale.z);
         group.position.set(-this.PARTICLE.position.x, this.PARTICLE.position.y, this.PARTICLE.position.z);
         // 旋转值在效果测试时，发现需要左手坐标系转右手坐标系
@@ -164,101 +165,160 @@ export default class ParticleManager extends Manager {
         this.group.rotation.copy(v);
 
         this.Scene.add(group);
+
+        // 预热，先发射所有的粒子
+        this.Prewarm();
         this.load = true;
     }
 
     // 管理粒子
-    ParticleMany(count) {
+    ParticleMany(count, time) {
         this.currentCount += count;
 
+        let parList = [];
         // console.log("创建了"+count+"个,还剩"+this.currentCount+"个");
         for (let i = count; i > 0; i--) {
             const obj = this.CreateMeshPlane();
 
-            if (this.PARTICLE.shape == ShapeEnum.Sphere)
+            if (this.PARTICLE.shape == ShapeEnum.Sphere || this.PARTICLE.shape == ShapeEnum.Hemisphere)
             { 
-                const theta = Math.random()*360 * (Math.PI / 180);
-                const phi = Math.random()*360 * (Math.PI / 180);
+                const theta = Math.random() * 360 * (Math.PI / 180);
+                const phi = Math.random() * 360 * (Math.PI / 180);
                 obj.position.setFromSphericalCoords( this.PARTICLE.radius, phi, theta );
-                obj.position.set(obj.position.x * this.PARTICLE.ShapeScale.x,
-                    obj.position.y * this.PARTICLE.ShapeScale.y,
-                    obj.position.z * this.PARTICLE.ShapeScale.z);
+                if (this.PARTICLE.shape == ShapeEnum.Sphere)
+                    obj.position. set(obj.position.x * this.PARTICLE.ShapeScale.x,
+                        obj.position.y * this.PARTICLE.ShapeScale.y,
+                        obj.position.z * this.PARTICLE.ShapeScale.z);
+                else
+                    obj.position.set(obj.position.x * this.PARTICLE.ShapeScale.x,
+                        obj.position.y * this.PARTICLE.ShapeScale.y,
+                        Math.abs(obj.position.z * this.PARTICLE.ShapeScale.z));
             }
             else if (this.PARTICLE.shape === ShapeEnum.Box) {
                 obj.position.set((Math.random() - 0.5) * this.PARTICLE.ShapeScale.x,
                     (Math.random() - 0.5) * this.PARTICLE.ShapeScale.y,
                     (Math.random() - 0.5) * this.PARTICLE.ShapeScale.z);
             }
-            /*else if (this.PARTICLE.shape == ShapeEnum.Hemisphere)
-            { 
-                
-            }*/
 
             this.group.add(obj);
             this.particleArr.push(obj);
             // 每一个粒子对应的创建时间数组
-            this.particleCreateTimeArr.push(Date.now());
+            this.particleCreateTimeArr.push(time);
+
+            parList.push(obj);
         }
+
+        return parList;
     }
 
+    //每一帧检测粒子生命周期、粒子的运动、粒子的朝向
     ParticleAnimation() {
+        //#region 检测粒子生命周期
         const life = Date.now() - this.particleCreateTimeArr[0];
         // 没活够，但是粒子数量太多了，需要生成新的粒子了，就要把老的销毁了
         if ((this.particleArr.length >= this.MaxParticleCount
-        // 每一个粒子对应的创建时间数组
         && life >= (this.PARTICLE.duration * 1000) / this.PARTICLE.playbackSpeed)
         // 活够了，销毁了
         || life >= (this.PARTICLE.startLifetime * 1000) / this.PARTICLE.playbackSpeed) {
             this.currentCount--;
             this.group.remove(this.particleArr[0]);
-            // 每一个粒子对应的创建时间数组
-            // console.log("销毁了1个,还剩"+currentCount+"个");
+            // console.log("销毁了1个,还剩"+ this.currentCount+"个");
             this.particleArr.shift();
             // 每一个粒子对应的创建时间数组
             this.particleCreateTimeArr.shift();
         }
-        // camera正前方向量
-        const tartgetPosCamera = this.camera.getWorldDirection(new THREE.Vector3());
-
+        //#endregion
+        
         for (let i = 0; i < this.particleArr.length; i++) {
-            // 每一个粒子对应的创建时间数组
             const obj = this.particleArr[i];
-            if (this.PARTICLE.shape === ShapeEnum.Sphere | this.PARTICLE.shape === ShapeEnum.Hemisphere) {
-                obj.position.x += (this.speed * obj.position.x * 0.002);
-                obj.position.y += (this.speed * obj.position.y * 0.002);
-                obj.position.z += (this.speed * obj.position.z * 0.002);
-            } else if (this.PARTICLE.shape === ShapeEnum.Box) {
-                obj.position.z -= this.speed;
-            }
+            //#region 单粒子的运动
+            this.OneParticleMoving(obj);
+            //#endregion
 
-            obj.position.x -= this.velocityLinearX;
-            obj.position.y += this.velocityLinearY;
-            obj.position.z += this.velocityLinearZ;
-
-            const world = obj.getWorldPosition(new THREE.Vector3());
-            if (this.PARTICLE.renderMode === RenderMode.Billboard) {
-                // 粒子总是面对相机
-                const targetYPos = new THREE.Vector3(world.x - tartgetPosCamera.x, 
-                    world.y - tartgetPosCamera.y, world.z - tartgetPosCamera.z);
-                obj.lookAt(targetYPos);
-                obj.rotation.z -= this.startRotation;
-            } else if (this.PARTICLE.renderMode === RenderMode.Stretch) {
-                const targetYPos = new THREE.Vector3(obj.position.x - this.camera.position.x, 
-                    obj.position.y - this.camera.position.y, obj.position.z - camera.position.z);
-                obj.lookAt(targetYPos);
-            } else if (this.PARTICLE.renderMode === RenderMode.HorizontalBillboard) {
-                const targetYPos = new THREE.Vector3(world.x - this.objZero.x, 
-                    world.y - this.objZero.y - Math.PI / 2, world.z - this.objZero.z);
-                obj.lookAt(targetYPos);
-                obj.rotation.z = obj.rotation.z - Math.PI + this.startRotation;
-            } else if (this.PARTICLE.renderMode === RenderMode.VerticalBillboard) {
-                // 粒子平面平行于世界坐标的Y轴，但是面向相机
-                const targetYPos = new THREE.Vector3(world.x - tartgetPosCamera.x,
-                    world.y, world.z - tartgetPosCamera.z);
-                obj.lookAt(targetYPos);
-                obj.rotation.z -= this.startRotation;
-            }
+            this.LookAtWho(obj);
             // console.log(obj.position.x+","+obj.position.y+","+obj.position.z)
+        }
+    }
+
+    OneParticleMoving(obj) {
+        if (this.PARTICLE.shape === ShapeEnum.Sphere || this.PARTICLE.shape === ShapeEnum.Hemisphere) {
+            obj.position.x += (this.speed * obj.position.x * 0.002);
+            obj.position.y += (this.speed * obj.position.x * 0.002);
+            obj.position.z += (this.speed * obj.position.x * 0.002);
+        } else if (this.PARTICLE.shape === ShapeEnum.Box) {
+            obj.position.z -= this.speed;
+        }
+
+        obj.position.x -= this.velocityLinearX;
+        obj.position.y += this.velocityLinearY;
+        obj.position.z += this.velocityLinearZ;
+    }
+
+    //RenderMode面片朝向
+    LookAtWho(obj) {
+        if (!this.tartgetPosCamera)
+            this.tartgetPosCamera = this.camera.getWorldDirection(new THREE.Vector3());
+
+        const world = obj.getWorldPosition(new THREE.Vector3());
+        if (this.PARTICLE.renderMode === RenderMode.Billboard) {
+            // 粒子总是面对相机
+            const targetYPos = new THREE.Vector3(world.x - this.tartgetPosCamera.x, 
+                world.y - this.tartgetPosCamera.y, world.z - this.tartgetPosCamera.z);
+            obj.lookAt(targetYPos);
+            obj.rotation.z -= this.startRotation;
+        } else if (this.PARTICLE.renderMode === RenderMode.Stretch) {
+            const targetYPos = new THREE.Vector3(obj.position.x - this.camera.position.x, 
+                obj.position.y - this.camera.position.y, obj.position.z - camera.position.z);
+            obj.lookAt(targetYPos);
+        } else if (this.PARTICLE.renderMode === RenderMode.HorizontalBillboard) {
+            const targetYPos = new THREE.Vector3(world.x - this.objZero.x, 
+                world.y - this.objZero.y - Math.PI / 2, world.z - this.objZero.z);
+            obj.lookAt(targetYPos);
+            obj.rotation.z = obj.rotation.z - Math.PI + this.startRotation;
+        } else if (this.PARTICLE.renderMode === RenderMode.VerticalBillboard) {
+            // 粒子平面平行于世界坐标的Y轴，但是面向相机
+            const targetYPos = new THREE.Vector3(world.x - this.tartgetPosCamera.x,
+                world.y, world.z - this.tartgetPosCamera.z);
+            obj.lookAt(targetYPos);
+            obj.rotation.z -= this.startRotation;
+        }
+    }
+
+    //粒子预热模拟
+    Prewarm(){
+        //只有勾选了Looping后才能勾选
+        if (!this.PARTICLE.looping 
+            //不需要预热，就算了
+            || (this.PARTICLE.looping && !this.PARTICLE.prewarm)) {
+                return;
+            }
+
+        //模拟最早那一刻生成粒子的时间
+        let passed = 1;
+        if (this.newPerFrame <= 0) {
+            passed = this.intervalCount;
+        }
+
+        const dateNow = new Date();
+        for (let i = 0; i < this.MaxParticleCount; i++) {
+            //时间既不是startLifetime也不是duration，应该根据maxParticles计算第一次销毁的时间间距
+            let time = 0;
+            if (this.PARTICLE.startLifetime > this.PARTICLE.duration) {
+                let roundCount = 60 * this.newCount;
+                time = this.MaxParticleCount/roundCount;
+            } else {
+                time = this.PARTICLE.startLifetime;
+            }
+
+            let timeMoving = time * 1000 - (((time * 1000) / this.MaxParticleCount) * passed * i);
+            let createTime = dateNow.setTime(dateNow.getTime() - timeMoving);
+            let pp = this.ParticleMany(1, createTime);
+            for (let j = 0; j < pp.length; j++) {
+                let obj = pp[j];
+                for (let kk = 0; kk < (timeMoving / 1000) * 60; kk++)
+                    this.OneParticleMoving(obj);
+                this.LookAtWho(obj);
+            }
         }
     }
 

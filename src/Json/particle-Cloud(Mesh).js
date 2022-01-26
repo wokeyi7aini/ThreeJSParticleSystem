@@ -16,10 +16,10 @@ let prewarm = true;
 //对应U3D Start Lifetime
 let startLifetime = 30;
 //对应U3D Start Speed
-let startSpeed = 10;
-//对应U3D Start Size
+let startSpeed = 0;
+//对应U3D Start Size0.3-0.5
 let startSize = 0.3;
-//对应U3D Start Rotation
+//对应U3D Start Rotation0-180
 let startRotation = 0;
 //对应U3D Start Color
 let startColor = 0xBCBCBC;
@@ -33,7 +33,7 @@ let rateOverTime = 15;
 let shape = "Hemisphere";
 //对应U3D 球形发射器半径
 let radius = 1;
-let ShapeScale = new THREE.Vector3(1000, 1000, 100);
+let ShapeScale = new THREE.Vector3(1, 1, 0.3);
 
 //对应U3D Velocity over Lifetime-Linear
 let velocityLinear = new THREE.Vector3(0.008,0,0);
