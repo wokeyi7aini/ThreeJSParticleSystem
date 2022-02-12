@@ -1,6 +1,6 @@
 {
   "name": "three-effect",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "public/main.js",
   "scripts": {
     "dev": "parcel src/demo.html --open --port 9090",

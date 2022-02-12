@@ -50,83 +50,6 @@ export default class ParticleManager extends Manager {
         this.particleCreateTimeArr = [];
     }
 
-    FrmatOption(PARTICLE) {
-        PARTICLE.position = new THREE.Vector3(PARTICLE.position.x, PARTICLE.position.y, PARTICLE.position.z);
-        PARTICLE.rotation = new THREE.Quaternion(PARTICLE.rotation.x, PARTICLE.rotation.y, PARTICLE.rotation.z, PARTICLE.rotation.w);
-        PARTICLE.scale = new THREE.Vector3(PARTICLE.scale.x, PARTICLE.scale.y, PARTICLE.scale.z);
-        PARTICLE.ShapeScale = new THREE.Vector3(PARTICLE.ShapeScale.x, PARTICLE.ShapeScale.y, PARTICLE.ShapeScale.z);
-        PARTICLE.velocityLinear = new THREE.Vector3(PARTICLE.velocityLinear.x, PARTICLE.velocityLinear.y, PARTICLE.velocityLinear.z);
-        if (PARTICLE.mainColor) {
-            PARTICLE.mainColorHex = parseInt(PARTICLE.mainColor);
-        }
-        if (PARTICLE.emissiveColor) {
-            PARTICLE.emissiveColorHex = parseInt(PARTICLE.emissiveColor);
-        }
-        console.log(PARTICLE);
-        return PARTICLE;
-    }
-
-    Production() {
-        if (this.newPerFrame <= 0) {
-            this.interval++;
-            if (this.interval % this.intervalCount !== 0) return;
-        }
-
-        const time = Date.now();
-        if (this.currentCount < this.MaxParticleCount
-            && (this.PARTICLE.looping
-            || (!this.PARTICLE.looping && time - this.startTime < ((this.PARTICLE.duration * 1000) / this.PARTICLE.playbackSpeed))
-            )) {
-            this.ParticleMany(this.newCount, Date.now());
-        }
-    }
-
-    Animate() {
-        if (!this.load) return;
-        this.tartgetPosCamera = this.camera.getWorldDirection(new THREE.Vector3());
-        
-        this.Production();
-        this.ParticleAnimation();
-    }
-
-    // 生产粒子
-    CreateMeshPlane() {
-        let material,
-            x = 1;
-        if (this.PARTICLE.emissiveColorHex) {
-            material = new THREE.MeshStandardMaterial({
-                map: this.texture,
-                depthWrite: false,
-                side: THREE.DoubleSide,
-                color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
-                emissive: (new THREE.Color(this.emissiveColorHex)).convertSRGBToLinear(),
-                emissiveIntensity: 1,
-                transparent: true,
-                opacity: 1
-            });
-        } else {
-            material = new THREE.MeshStandardMaterial({
-                map: this.texture,
-                depthWrite: false,
-                side: THREE.DoubleSide,
-                color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
-                // emissive: (new THREE.Color(this.emissiveColorHex)).convertSRGBToLinear(),
-                // emissiveIntensity: 1,
-                transparent: true,
-                opacity: 1
-            });
-        }
-
-        if (this.PARTICLE.renderMode === RenderMode.Stretch) { x = this.PARTICLE.renderLengthScale; }
-
-        const geometry = new THREE.PlaneBufferGeometry(this.PARTICLE.startSize * x, this.PARTICLE.startSize, 1),
-
-            box = new THREE.Mesh(geometry, material);
-        this.objZero.copy(box.rotation);
-        box.updateMatrixWorld();
-        return box;
-    }
-
     Init(texture) {
         const group = new THREE.Group();
         // 最大粒子数 Particles=PARTICLE.startLifetime*PARTICLE.rateOverTime
@@ -171,47 +94,40 @@ export default class ParticleManager extends Manager {
         this.load = true;
     }
 
-    // 管理粒子
-    ParticleMany(count, time) {
-        this.currentCount += count;
-
-        let parList = [];
-        // console.log("创建了"+count+"个,还剩"+this.currentCount+"个");
-        for (let i = count; i > 0; i--) {
-            const obj = this.CreateMeshPlane();
-
-            if (this.PARTICLE.shape == ShapeEnum.Sphere || this.PARTICLE.shape == ShapeEnum.Hemisphere)
-            { 
-                const theta = Math.random() * 360 * (Math.PI / 180);
-                const phi = Math.random() * 360 * (Math.PI / 180);
-                obj.position.setFromSphericalCoords( this.PARTICLE.radius, phi, theta );
-                if (this.PARTICLE.shape == ShapeEnum.Sphere)
-                    obj.position. set(obj.position.x * this.PARTICLE.ShapeScale.x,
-                        obj.position.y * this.PARTICLE.ShapeScale.y,
-                        obj.position.z * this.PARTICLE.ShapeScale.z);
-                else
-                    obj.position.set(obj.position.x * this.PARTICLE.ShapeScale.x,
-                        obj.position.y * this.PARTICLE.ShapeScale.y,
-                        Math.abs(obj.position.z * this.PARTICLE.ShapeScale.z));
-            }
-            else if (this.PARTICLE.shape === ShapeEnum.Box) {
-                obj.position.set((Math.random() - 0.5) * this.PARTICLE.ShapeScale.x,
-                    (Math.random() - 0.5) * this.PARTICLE.ShapeScale.y,
-                    (Math.random() - 0.5) * this.PARTICLE.ShapeScale.z);
-            }
-
-            this.group.add(obj);
-            this.particleArr.push(obj);
-            // 每一个粒子对应的创建时间数组
-            this.particleCreateTimeArr.push(time);
-
-            parList.push(obj);
+    // 粒子解析
+    FrmatOption(PARTICLE) {
+        PARTICLE.position = new THREE.Vector3(PARTICLE.position.x, PARTICLE.position.y, PARTICLE.position.z);
+        PARTICLE.rotation = new THREE.Quaternion(PARTICLE.rotation.x, PARTICLE.rotation.y, PARTICLE.rotation.z, PARTICLE.rotation.w);
+        PARTICLE.scale = new THREE.Vector3(PARTICLE.scale.x, PARTICLE.scale.y, PARTICLE.scale.z);
+        PARTICLE.ShapeScale = new THREE.Vector3(PARTICLE.ShapeScale.x, PARTICLE.ShapeScale.y, PARTICLE.ShapeScale.z);
+        PARTICLE.velocityLinear = new THREE.Vector3(PARTICLE.velocityLinear.x, PARTICLE.velocityLinear.y, PARTICLE.velocityLinear.z);
+        if (PARTICLE.mainColor) {
+            PARTICLE.mainColorHex = parseInt(PARTICLE.mainColor);
         }
-
-        return parList;
+        if (PARTICLE.emissiveColor) {
+            PARTICLE.emissiveColorHex = parseInt(PARTICLE.emissiveColor);
+        }
+        console.log(PARTICLE);
+        return PARTICLE;
     }
 
-    //每一帧检测粒子生命周期、粒子的运动、粒子的朝向
+    // 每一帧检测是否需要创建粒子
+    Production() {
+        if (this.newPerFrame <= 0) {
+            this.interval++;
+            if (this.interval % this.intervalCount !== 0) return;
+        }
+
+        const time = Date.now();
+        if (this.currentCount < this.MaxParticleCount
+            && (this.PARTICLE.looping
+            || (!this.PARTICLE.looping && (time - this.startTime) < ((this.PARTICLE.duration * 1000) / this.PARTICLE.playbackSpeed))
+            )) {
+            this.ParticleMany(this.newCount, Date.now());
+        }
+    }
+
+    // 每一帧检测粒子生命周期、粒子的运动、粒子的朝向
     ParticleAnimation() {
         //#region 检测粒子生命周期
         const life = Date.now() - this.particleCreateTimeArr[0];
@@ -240,6 +156,87 @@ export default class ParticleManager extends Manager {
         }
     }
 
+    // 生产粒子
+    CreateMeshPlane() {
+        let material,
+            x = 1;
+        if (this.PARTICLE.emissiveColorHex) {
+            material = new THREE.MeshStandardMaterial({
+                map: this.texture,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+                color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
+                emissive: (new THREE.Color(this.emissiveColorHex)).convertSRGBToLinear(),
+                emissiveIntensity: 1,
+                transparent: true,
+                opacity: 1
+            });
+        } else {
+            material = new THREE.MeshStandardMaterial({
+                map: this.texture,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+                color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
+                // emissive: (new THREE.Color(this.emissiveColorHex)).convertSRGBToLinear(),
+                // emissiveIntensity: 1,
+                transparent: true,
+                opacity: 1
+            });
+        }
+
+        if (this.PARTICLE.renderMode === RenderMode.Stretch) { x = this.PARTICLE.renderLengthScale; }
+
+        const geometry = new THREE.PlaneBufferGeometry(this.PARTICLE.startSize * x, this.PARTICLE.startSize, 1),
+
+            box = new THREE.Mesh(geometry, material);
+
+        this.objZero.copy(box.rotation);
+        box.updateMatrixWorld();
+
+        return box;
+    }
+
+    // 管理粒子
+    ParticleMany(count, time) {
+        this.currentCount += count;
+
+        let parList = [];
+        // console.log("创建了"+count+"个,还剩"+this.currentCount+"个 "+ time);
+        for (let i = count; i > 0; i--) {
+            const obj = this.CreateMeshPlane();
+
+            if (this.PARTICLE.shape === ShapeEnum.Sphere || this.PARTICLE.shape === ShapeEnum.Hemisphere)
+            { 
+                const theta = Math.random() * 360 * (Math.PI / 180);
+                const phi = Math.random() * 360 * (Math.PI / 180);
+                obj.position.setFromSphericalCoords( this.PARTICLE.radius, phi, theta );
+                if (this.PARTICLE.shape === ShapeEnum.Sphere)
+                    obj.position. set(obj.position.x * this.PARTICLE.ShapeScale.x,
+                        obj.position.y * this.PARTICLE.ShapeScale.y,
+                        obj.position.z * this.PARTICLE.ShapeScale.z);
+                else
+                    obj.position.set(obj.position.x * this.PARTICLE.ShapeScale.x,
+                        obj.position.y * this.PARTICLE.ShapeScale.y,
+                        Math.abs(obj.position.z * this.PARTICLE.ShapeScale.z));
+            }
+            else if (this.PARTICLE.shape === ShapeEnum.Box) {
+                obj.position.set((Math.random() - 0.5) * this.PARTICLE.ShapeScale.x,
+                    (Math.random() - 0.5) * this.PARTICLE.ShapeScale.y,
+                    (Math.random() - 0.5) * this.PARTICLE.ShapeScale.z);
+            }
+
+            this.group.add(obj);
+            this.particleArr.push(obj);
+            // 每一个粒子对应的创建时间数组
+            this.particleCreateTimeArr.push(time);
+
+            parList.push(obj);
+        }
+
+        return parList;
+    }
+
+    // 模拟一个粒子的运动
     OneParticleMoving(obj) {
         if (this.PARTICLE.shape === ShapeEnum.Sphere || this.PARTICLE.shape === ShapeEnum.Hemisphere) {
             obj.position.x += (this.speed * obj.position.x * 0.002);
@@ -254,7 +251,7 @@ export default class ParticleManager extends Manager {
         obj.position.z += this.velocityLinearZ;
     }
 
-    //RenderMode面片朝向
+    // 模拟一个粒子根据“RenderMode”控制面片的朝向
     LookAtWho(obj) {
         if (!this.tartgetPosCamera)
             this.tartgetPosCamera = this.camera.getWorldDirection(new THREE.Vector3());
@@ -284,7 +281,7 @@ export default class ParticleManager extends Manager {
         }
     }
 
-    //粒子预热模拟
+    // 模拟MaxParticleCount个粒子“预热”一次性发射
     Prewarm(){
         //只有勾选了Looping后才能勾选
         if (!this.PARTICLE.looping 
@@ -293,25 +290,21 @@ export default class ParticleManager extends Manager {
                 return;
             }
 
-        //模拟最早那一刻生成粒子的时间
-        let passed = 1;
+        //模拟创建粒子间隙时间
+        let intervalCount = 1;
         if (this.newPerFrame <= 0) {
-            passed = this.intervalCount;
+            intervalCount = this.intervalCount;
         }
 
-        const dateNow = new Date();
-        for (let i = 0; i < this.MaxParticleCount; i++) {
+        const dateNow = (new Date()).getTime();
+        
+        const roundCount = 60 * this.newCount;
+        const countPerFrame = Math.round(1000 / roundCount);
+        
+        for (let i = this.MaxParticleCount; i > 0; i--) {
             //时间既不是startLifetime也不是duration，应该根据maxParticles计算第一次销毁的时间间距
-            let time = 0;
-            if (this.PARTICLE.startLifetime > this.PARTICLE.duration) {
-                let roundCount = 60 * this.newCount;
-                time = this.MaxParticleCount/roundCount;
-            } else {
-                time = this.PARTICLE.startLifetime;
-            }
-
-            let timeMoving = time * 1000 - (((time * 1000) / this.MaxParticleCount) * passed * i);
-            let createTime = dateNow.setTime(dateNow.getTime() - timeMoving);
+            let timeMoving = parseInt(countPerFrame * intervalCount * i);
+            let createTime = (new Date()).setTime(dateNow - timeMoving);
             let pp = this.ParticleMany(1, createTime);
             for (let j = 0; j < pp.length; j++) {
                 let obj = pp[j];
@@ -323,7 +316,11 @@ export default class ParticleManager extends Manager {
     }
 
     Update() {
-        this.Animate();
+        if (!this.load) return;
+        this.tartgetPosCamera = this.camera.getWorldDirection(new THREE.Vector3());
+        
+        this.Production();
+        this.ParticleAnimation();
     }
 
     Destroy() {
