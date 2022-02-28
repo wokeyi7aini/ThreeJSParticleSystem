@@ -9,15 +9,18 @@ import SkyboxManager from './Utils/skyboxTest';
 import ParticleManager from './AE/particle';
 import ParticleJson from './Json/particleSystemDatas';
 
-import LineAnimationManager from './AE/LineAnimation';
-import LineAnimationJson from './Json/LineAnimationDatas';
+import PipelineAnimationManager from './AE/PipelineAnimation';
+import PipelineAnimationJson from './Json/PipelineAnimationDatas';
 
 import LightFlareManager from './AE/LightFlare';
 import LightFlareDatas from './Json/LightFlareDatas';
 
+import LineAnimationManager from './AE/LineAnimation';
+import LineAnimationJson from './Json/LineAnimationDatas';
+
 let camera,renderer,scene,controls,stats,
     cameraManager,particle;
-let lineAnimationArr = [];
+let pipelineAnimationArr = [], lineAnimationArr = [];
 
  function Init(){
     camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 210000 );
@@ -34,15 +37,16 @@ let lineAnimationArr = [];
     cameraManager.stats = stats;
     cameraManager.Create();
 
-    // var axis = new THREE.AxesHelper(800);
-    // scene.add(axis);
+    var axis = new THREE.AxesHelper(800);
+    scene.add(axis);
 
-    FbxLoader();
+    // FbxLoader();
     // Fasheqi();
-    Skybox();
+    // Skybox();
 
-    Particle();
-    // LineAnimation();
+    // Particle();
+    // PipelineAnimation();
+    LineAnimation();
     // LightFlare();
  }
 
@@ -53,39 +57,59 @@ let lineAnimationArr = [];
         cameraManager.Update();
     if (particle)
         particle.Update();
+    for (let i = 0; i < pipelineAnimationArr.length; i++) {
+        pipelineAnimationArr[i].Update();
+    }
     for (let i = 0; i < lineAnimationArr.length; i++) {
         lineAnimationArr[i].Update();
     }
 }
 
+// 粒子特效
 function Particle(){
     particle = new ParticleManager(ParticleJson);
     particle.camera = camera;
     particle.Scene = scene;
-    const Texturing = require('../textures/rain.png')
+    const Texturing = require('../textures/cloud.png')
     particle.Init(Texturing);
 }
 
+// 粒子特效的发射器模型
 function Fasheqi(){
     const fasheqi = new FasheQiManager(ParticleJson);
     fasheqi.scene = scene;
     fasheqi.Create();
 }
 
+// 场景模型
 function FbxLoader(){
     const fbx = new FBXLoaderManager();
     fbx.scene = scene;
     fbx.Create();
 }
 
+// 天空盒
 function Skybox(){
     const skybox = new SkyboxManager();
     skybox.scene = scene;
     skybox.Init();
 }
 
+// 管道动画（圆型管道）
+function PipelineAnimation(){
+    PipelineAnimationJson.PipelineAnimationDatas.forEach(line => {
+        const lineAnimation = new PipelineAnimationManager(line)
+        lineAnimation.scene = scene;
+        const Texturing = require('../textures/line.png')
+        lineAnimation.Init(Texturing);
+
+        pipelineAnimationArr.push(lineAnimation);
+    });
+}
+
+// 线条动画（平面）
 function LineAnimation(){
-    LineAnimationJson.lineAnimationDatas.forEach(line => {
+    LineAnimationJson.LineAnimationDatas.forEach(line => {
         const lineAnimation = new LineAnimationManager(line)
         lineAnimation.scene = scene;
         const Texturing = require('../textures/line.png')
@@ -95,6 +119,7 @@ function LineAnimation(){
     });
 }
 
+// 太阳光晕
 function LightFlare(){
     let directionalLight = new THREE.DirectionalLight(0xffffff);
     directionalLight.position.set(0, 100, -50);
