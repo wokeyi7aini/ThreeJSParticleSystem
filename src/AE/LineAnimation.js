@@ -71,7 +71,7 @@ export default class LineAnimationManager extends Manager {
         this.twistRotation = new THREE.Quaternion();
     }
 
-    Init(texturePath) {
+    Init(texturePath, test = false) {
         this.texture = new THREE.TextureLoader().load(texturePath);
         this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping; //每个都重复
         this.texture.repeat.set(1, 1);
@@ -87,10 +87,10 @@ export default class LineAnimationManager extends Manager {
         this.group.rotation.copy(v);
         this.group.position.set(-this.position.x, this.position.y, this.position.z);
 
-        this.LineAnimation();
+        this.LineAnimation(test);
     }
 
-    LineAnimation(){
+    LineAnimation(test){
         //至少要2个点才行
         if (this.pathArr.length < 6) {
             console.log("数组个数不够!");
@@ -137,7 +137,8 @@ export default class LineAnimationManager extends Manager {
         this.CreateLine3D(material);
 
         //测试用的，管道本身
-        // this.ForTest();
+        if (test)
+            this.ForTest();
 
         for (let i = 0; i < this.meshArray.length; i++) {
             const mesh =  this.meshArray[i].tyGroup;

@@ -113,7 +113,7 @@ function LineAnimation(){
         const lineAnimation = new LineAnimationManager(line)
         lineAnimation.scene = scene;
         const Texturing = require('../textures/line.png')
-        lineAnimation.Init(Texturing);
+        lineAnimation.Init(Texturing, true);
 
         lineAnimationArr.push(lineAnimation);
     });
