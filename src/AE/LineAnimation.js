@@ -156,24 +156,24 @@ export default class LineAnimationManager extends Manager {
             progress += this.speedX;
 
             if (this.speedX >= 0) {
-                if (this.loop && progress >= this.meshArray[i].txProgressEnd) {
+                if (this.loop && progress > this.meshArray[i].txProgressEnd) {
                     progress = this.meshArray[i].txProgressStart;
                 } else if (!this.loop && progress >= this.meshArray[i].txProgressEnd) {
-                    continue;
+                    return;
                 }
             } else {
-                if (this.loop && progress <= this.meshArray[i].txProgressEnd) {
+                if (this.loop && progress < this.meshArray[i].txProgressEnd) {
                     progress = this.meshArray[i].txProgressStart;
                 } else if (!this.loop && progress <= this.meshArray[i].txProgressEnd) {
-                    continue;
+                    return;
                 }
             }
 
-            if ((this.speedX > 0 && progress >= 1)
-            || (this.speedX < 0 && progress <= 0)) {
+            if (this.speedX > 0 && progress > 1) {
+                progress = this.meshArray[i].txProgressStart;
+            } else if (this.speedX < 0 && progress < 0) {
                 progress = this.meshArray[i].txProgressStart;
             }
-
             this.meshArray[i].progress = progress;
 
             const point = this.curve.getPointAt(progress);
@@ -194,7 +194,7 @@ export default class LineAnimationManager extends Manager {
 
                 //Y轴方向单个面片的Y轴移动
                 {
-                    if (this.speedY === 0) continue;
+                    if (this.speedY === 0) return;
 
                     const meshs = tyGroup.children;
                     //只有一个面片时，移动的是贴图offset Y
@@ -226,7 +226,7 @@ export default class LineAnimationManager extends Manager {
                             if (this.loop && distance <= 1) {
                                 mesh.position.set(positionStart.x, positionStart.y, positionStart.z);
                             } else if (!this.loop && distance <= this.speedY) {
-                                continue;
+                                return;
                             }
                         }
                     }
@@ -303,14 +303,13 @@ export default class LineAnimationManager extends Manager {
                 tyGroup.add(mesh);
             }
 
-            if (this.speedX >= 0)
-            {
-                txProgressStart = 0;
-                txProgressEnd = 1;
+            if (this.speedX >= 0) {
+                txProgressStart = progress;
+                txProgressEnd = txProgress * (tx + 1);
             } else {
-                txProgressStart = 1;
-                txProgressEnd = 0;
-                progress = txProgress * (tx + 1);
+                txProgressStart = txProgress * (tx + 1);
+                txProgressEnd = progress;
+                progress = txProgressStart;
             }
 
             const obj = { tyGroup, txProgressStart, txProgressEnd, progress, 
