@@ -34,7 +34,7 @@ export default class LineAnimationManager extends Manager {
         
         //平面流光里，代表的是速度值
         this.speedX = LineAnimation.speedX;
-        this.speedY = LineAnimation.speedY;
+        this.speedY = LineAnimation.speedY * 0.59;
 
         //tiling后，对象之间的Y轴方位间隙
         this.offsetY = LineAnimation.offsetY;
@@ -150,89 +150,7 @@ export default class LineAnimationManager extends Manager {
     }
 
     Update() {
-        //判断循环播放
-        for (let i = 0; i < this.meshArray.length; i++) {
-            const progress = this.meshArray[i].progress;
-            progress += this.speedX;
-
-            if (this.speedX >= 0) {
-                if (this.loop && progress > this.meshArray[i].txProgressEnd) {
-                    progress = this.meshArray[i].txProgressStart;
-                } else if (!this.loop && progress >= this.meshArray[i].txProgressEnd) {
-                    return;
-                }
-            } else {
-                if (this.loop && progress < this.meshArray[i].txProgressEnd) {
-                    progress = this.meshArray[i].txProgressStart;
-                } else if (!this.loop && progress <= this.meshArray[i].txProgressEnd) {
-                    return;
-                }
-            }
-
-            if (this.speedX > 0 && progress > 1) {
-                progress = this.meshArray[i].txProgressStart;
-            } else if (this.speedX < 0 && progress < 0) {
-                progress = this.meshArray[i].txProgressStart;
-            }
-            this.meshArray[i].progress = progress;
-
-            const point = this.curve.getPointAt(progress);
-            if (point) {
-                const tyGroup = this.meshArray[i].tyGroup;
-                tyGroup.position.set(point.x,point.y,point.z);
-
-                //X轴方向移动，未锁定单个面片的旋转时，按照面片初始旋转量&当前点的法线，根据法线轴旋转面片
-                if (!this.lock) {
-                    const index = parseInt(progress * this.cornerVertices);
-                    this.binormal.copy(this.frames.binormals[index]).applyQuaternion(this.faceRotation);
-                    this.tangent.copy(this.frames.tangents[index]);
-                    this.twistRotation.setFromAxisAngle(this.tangent, 0);
-                    this.binormal.applyQuaternion(this.twistRotation);
-                    const angleToBinormal = this.binormal.angleTo(this.planeRotate.toVector3());
-                    tyGroup.quaternion.setFromAxisAngle(this.binormal, angleToBinormal)
-                }
-
-                //Y轴方向单个面片的Y轴移动
-                {
-                    if (this.speedY === 0) return;
-
-                    const meshs = tyGroup.children;
-                    //只有一个面片时，移动的是贴图offset Y
-                    if (meshs.length === 1) {
-                        // 设置纹理偏移
-                        if ((this.texture && this.loop)
-                        || ((this.texture && !this.loop)
-                        && (Math.abs(this.texture.offset.y) < 1)))
-                        {
-                            this.texture.offset.y += this.speedY * 0.59;
-                        }
-                    } else {
-                        const positionStart = this.meshArray[i].positionArray.positionStart,
-                        positionEnd = this.meshArray[i].positionArray.positionEnd;
-
-                        //多个面片时，移动的是面片的Y轴坐标
-                        for (let k = 0; k < meshs.length; k++) {
-                            const mesh = meshs[k],
-                            positionMove = new THREE.Vector3();
-                            positionMove.subVectors(positionEnd, positionStart);
-
-                            const offset = new THREE.Vector3(positionMove.x * this.speedY, positionMove.y * this.speedY, 
-                                positionMove.z * this.speedY);
-                            mesh.position.add(offset);
-
-                            //当前面片距离终点的位置
-                            const distance = mesh.position.distanceTo(positionEnd);
-
-                            if (this.loop && distance <= 1) {
-                                mesh.position.set(positionStart.x, positionStart.y, positionStart.z);
-                            } else if (!this.loop && distance <= this.speedY) {
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        this.PlaneMoveX();
     }
 
     CreateLine3D(material) {
@@ -245,6 +163,8 @@ export default class LineAnimationManager extends Manager {
             progress = txProgress * tx,
             positionStart = new THREE.Vector3(),
             positionEnd = new THREE.Vector3(),
+            turn = [],
+            positionInit = [],
                 
             //Y轴方向初始偏移量
             translateYInit = 0,
@@ -260,10 +180,10 @@ export default class LineAnimationManager extends Manager {
 
             for (let ty = 0; ty < this.tilingY; ty++) {
                 const geometry = new THREE.PlaneBufferGeometry(this.width, this.height, 1),
-                mesh = new THREE.Mesh(geometry, material),
-                offsetCount = parseInt(this.tilingY * 0.5),
+                mesh = new THREE.Mesh(geometry, material);
 
-                world = mesh.getWorldPosition(new THREE.Vector3()),
+                const world = mesh.getWorldPosition(new THREE.Vector3()),
+                offsetCount = parseInt(this.tilingY * 0.5),
                 targetYPos = new THREE.Vector3(world.x, world.y - Math.PI / 2, world.z);
 
                 mesh.lookAt(targetYPos);
@@ -300,6 +220,8 @@ export default class LineAnimationManager extends Manager {
                     mesh.translateY(-moveDistance);
                 }
 
+                turn.push(false);
+                positionInit.push(new THREE.Vector3(mesh.position.x, mesh.position.y, mesh.position.z));
                 tyGroup.add(mesh);
             }
 
@@ -315,14 +237,170 @@ export default class LineAnimationManager extends Manager {
             const obj = { tyGroup, txProgressStart, txProgressEnd, progress, 
                 positionArray:{
                 positionStart: positionStart,
-                positionEnd: positionEnd
-            } };
+                positionEnd: positionEnd,
+                positionInit: positionInit, 
+                turn: turn
+                },isFirst:true
+             };
 
             this.meshArray.push(obj);
         }
     }
 
-    ForTest(){
+    //X方向的偏移
+    PlaneMoveX() {
+        for (let i = 0; i < this.meshArray.length; i++) {
+            const obj = this.meshArray[i],
+            progress = obj.progress;
+            progress += this.speedX;
+
+            if (this.speedX >= 0) {
+                if (this.loop && progress > obj.txProgressEnd) {
+                    progress = obj.txProgressStart;
+                } else if (!this.loop && progress >= obj.txProgressEnd) {
+                    continue;
+                }
+            } else {
+                if (this.loop && progress < obj.txProgressEnd) {
+                    progress = obj.txProgressStart;
+                } else if (!this.loop && progress <= obj.txProgressEnd) {
+                    continue;
+                }
+            }
+
+            if ((this.speedX > 0 && progress > 1)
+            || (this.speedX < 0 && progress < 0)) {
+                progress = obj.txProgressStart;
+            }
+            
+            obj.progress = progress;
+
+            const point = this.curve.getPointAt(progress);
+            if (point) {
+                const tyGroup = obj.tyGroup;
+                tyGroup.position.set(point.x,point.y,point.z);
+
+                //X轴方向移动，未锁定单个面片的旋转时，按照面片初始旋转量&当前点的法线，根据法线轴旋转面片
+                if (!this.lock) {
+                    const index = parseInt(progress * this.cornerVertices);
+                    this.binormal.copy(this.frames.binormals[index]).applyQuaternion(this.faceRotation);
+                    this.tangent.copy(this.frames.tangents[index]);
+                    this.twistRotation.setFromAxisAngle(this.tangent, 0);
+                    this.binormal.applyQuaternion(this.twistRotation);
+                    const angleToBinormal = this.binormal.angleTo(this.planeRotate.toVector3());
+                    tyGroup.quaternion.setFromAxisAngle(this.binormal, angleToBinormal)
+                }
+
+                this.PlaneMoveY(tyGroup, obj);
+            }
+        }
+    }
+
+    //Y轴方向单个面片的Y轴移动
+    PlaneMoveY(tyGroup, obj) {
+        if (this.speedY === 0 || Math.abs(this.speedY) >= 1) return;
+
+        const meshs = tyGroup.children;
+        //只有一个面片时，移动的是贴图offset Y
+        if (meshs.length === 1) {
+            // 设置纹理偏移
+            if ((this.texture && this.loop)
+            || ((this.texture && !this.loop)
+            && (Math.abs(this.texture.offset.y) < 1)))
+            {
+                this.texture.offset.y -= this.speedY;
+            }
+        } else {
+            let positionStart = obj.positionArray.positionStart,
+            positionEnd = obj.positionArray.positionEnd;
+
+            if (this.speedY < 0)
+            {
+                const temp = new THREE.Vector3(positionStart.x, positionStart.y, positionStart.z);
+                positionStart = new THREE.Vector3(positionEnd.x, positionEnd.y, positionEnd.z);
+                positionEnd = new THREE.Vector3(temp.x, temp.y, temp.z);
+            }
+
+            const positionMove = new THREE.Vector3(
+                positionEnd.x - positionStart.x,
+                positionEnd.y - positionStart.y,
+                positionEnd.z - positionStart.z),
+
+            //每次偏移量
+            offset = new THREE.Vector3(
+                positionMove.x * this.speedY,
+                positionMove.y * this.speedY,
+                positionMove.z * this.speedY);
+            //Y轴起终点距离
+            let positionDistance = positionEnd.distanceTo(positionStart);
+
+            //多个面片时，移动的是面片的Y轴坐标
+            for (let k = 0; k < meshs.length; k++)
+            {
+                const mesh = meshs[k];
+
+                if (obj.isFirst || !this.loop)
+                {
+                    const meshPos = new THREE.Vector3(mesh.position.x, mesh.position.y, mesh.position.z);
+                    if (this.speedY > 0)
+                        positionDistance = positionEnd.distanceTo(meshPos);
+                    else
+                        positionDistance = meshPos.distanceTo(positionEnd);
+                }
+
+                //当前一次偏移的位置坐标
+                let moveTo;
+                if (this.speedY > 0) {
+                    moveTo = new THREE.Vector3(
+                        mesh.position.x + offset.x,
+                        mesh.position.y + offset.y,
+                        mesh.position.z + offset.z);
+                } else {
+                    moveTo = new THREE.Vector3(
+                        mesh.position.x - offset.x,
+                        mesh.position.y - offset.y,
+                        mesh.position.z - offset.z);
+                }
+
+                //当前面片距离终点的位置
+                let distance = moveTo.distanceTo(positionEnd);
+                if (this.loop 
+                    && (!obj.positionArray.turn[k] || obj.isFirst) 
+                    && (distance >= positionDistance || distance <= 1))
+                {
+                    let isfirstFlag = true;
+                    obj.positionArray.turn[k] = true;
+                    obj.positionArray.turn.forEach(turn =>
+                    {
+                        if (!turn)
+                            isfirstFlag = false;
+                    });
+                    if (isfirstFlag)
+                        obj.isFirst = false;
+                    mesh.position.set(positionStart.x, positionStart.y, positionStart.z);
+                }
+                else if (this.loop && distance < positionDistance && distance > 1)
+                {
+                    obj.positionArray.turn[k] = false;
+                    mesh.position.set(moveTo.x, moveTo.y, moveTo.z);
+                }
+                else if (!this.loop  && obj.isFirst && distance < positionDistance && distance > 1)
+                {
+                    mesh.position.set(moveTo.x, moveTo.y, moveTo.z);
+                }
+                else if (!this.loop
+                     && (!obj.isFirst ||
+                     (distance >= positionDistance || distance <= 1)))
+                {
+                    obj.isFirst = false;
+                    const pos = obj.positionArray.positionInit[k];
+                    mesh.position.set(pos.x, pos.y, pos.z);
+                }
+            }
+        }
+    }
+
+    ForTest() {
         //运行轨道，辅助用
         const lineMaterial = new THREE.LineBasicMaterial({
             color: 0xff00ff,
