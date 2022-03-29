@@ -52,6 +52,12 @@ export default
         {"time":0.5852903, "data":1},
         {"time":1, "data":0},
     ],
+    "rotationOverLifetime":false,
+    "rotationOverLifetimeRotate":{
+        "x":0,
+        "y":45,
+        "z":25
+    },
     "renderMode":"HorizontalBillboard",
     "mainColor":"0xFFFFFF",
     "emissiveColor":"0x000000"

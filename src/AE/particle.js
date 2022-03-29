@@ -44,6 +44,11 @@ export default class ParticleManager extends Manager {
         this.velocityLinearY = 0;
         this.velocityLinearZ = 0;
         this.startRotation = 0;
+
+        this.rotationOverLifetimeRotateX = 0;
+        this.rotationOverLifetimeRotateY = 0;
+        this.rotationOverLifetimeRotateZ = 0;
+        
         // 粒子数组
         this.particleArr = [];
         // 每一个粒子对应的创建时间数组
@@ -79,6 +84,10 @@ export default class ParticleManager extends Manager {
         this.speed = this.PARTICLE.startSpeed * 0.02 * this.PARTICLE.playbackSpeed;
 
         this.startRotation = THREE.MathUtils.degToRad(this.PARTICLE.startRotation);
+
+        this.rotationOverLifetimeRotateX = THREE.MathUtils.degToRad(-this.PARTICLE.rotationOverLifetimeRotate.x * 0.02);
+        this.rotationOverLifetimeRotateY = THREE.MathUtils.degToRad(this.PARTICLE.rotationOverLifetimeRotate.y * 0.02);
+        this.rotationOverLifetimeRotateZ = THREE.MathUtils.degToRad(this.PARTICLE.rotationOverLifetimeRotate.z * 0.02);
 
         group.scale.set(this.PARTICLE.scale.x, this.PARTICLE.scale.y, this.PARTICLE.scale.z);
         group.position.set(-this.PARTICLE.position.x, this.PARTICLE.position.y, this.PARTICLE.position.z);
@@ -128,7 +137,7 @@ export default class ParticleManager extends Manager {
             && (this.PARTICLE.looping
             || (!this.PARTICLE.looping && (time - this.startTime) < ((this.PARTICLE.duration * 1000) / this.PARTICLE.playbackSpeed))
             )) {
-            this.ParticleMany(this.newCount, Date.now());
+            this.ParticleMany(this.newCount, time);
         }
     }
 
@@ -165,10 +174,7 @@ export default class ParticleManager extends Manager {
 
     // 生产粒子
     CreateMeshPlane() {
-        let material, x = 1, alpha = 1,
-        root = new THREE.Object3D(),
-        startSize = this.LimitRandom(this.PARTICLE.startSize1, this.PARTICLE.startSize2),
-        startRotation = this.LimitRandom(this.PARTICLE.startRotation, this.PARTICLE.startRotation2);
+        let material, x = 1, alpha = 1;
 
         const colorOverLifetimeAlphaKeysList = this.PARTICLE.colorOverLifetimeAlphaKeysList;
         if (this.PARTICLE.colorOverLiftime && colorOverLifetimeAlphaKeysList 
@@ -201,7 +207,10 @@ export default class ParticleManager extends Manager {
 
         if (this.PARTICLE.renderMode === RenderMode.Stretch) { x = this.PARTICLE.renderLengthScale; }
 
-        const geometry = new THREE.PlaneBufferGeometry(startSize * x, startSize, 1),
+        const root = new THREE.Object3D(),
+        startSize = this.LimitRandom(this.PARTICLE.startSize1, this.PARTICLE.startSize2),
+        startRotation = this.LimitRandom(this.PARTICLE.startRotation, this.PARTICLE.startRotation2),
+        geometry = new THREE.PlaneBufferGeometry(startSize * x, startSize, 1),
         box = new THREE.Mesh(geometry, material);
 
         box.rotation.z = THREE.MathUtils.degToRad(startRotation);
@@ -347,6 +356,12 @@ export default class ParticleManager extends Manager {
                 world.y - this.tartgetPosCamera.y, world.z - this.tartgetPosCamera.z);
             obj.lookAt(targetYPos);
             obj.rotation.z -= this.startRotation;
+
+            if (this.PARTICLE.rotationOverLifetime) {
+                obj.children[0].rotateX(this.rotationOverLifetimeRotateX);
+                obj.children[0].rotateY(this.rotationOverLifetimeRotateY);
+                obj.children[0].rotateZ(this.rotationOverLifetimeRotateZ);
+            }
         } else if (this.PARTICLE.renderMode === RenderMode.Stretch) {
             const targetYPos = new THREE.Vector3(obj.position.x - this.camera.position.x, 
                 obj.position.y - this.camera.position.y, obj.position.z - camera.position.z);
@@ -356,12 +371,20 @@ export default class ParticleManager extends Manager {
                 world.y - this.objZero.y - Math.PI / 2, world.z - this.objZero.z);
             obj.lookAt(targetYPos);
             obj.rotation.z = obj.rotation.z - Math.PI + this.startRotation;
+
+            if (this.PARTICLE.rotationOverLifetime) {
+                obj.children[0].rotateZ(this.rotationOverLifetimeRotateZ);
+            }
         } else if (this.PARTICLE.renderMode === RenderMode.VerticalBillboard) {
             // 粒子平面平行于世界坐标的Y轴，但是面向相机
             const targetYPos = new THREE.Vector3(world.x - this.tartgetPosCamera.x,
                 world.y, world.z - this.tartgetPosCamera.z);
             obj.lookAt(targetYPos);
             obj.rotation.z -= this.startRotation;
+
+            if (this.PARTICLE.rotationOverLifetime) {
+                obj.children[0].rotateZ(this.rotationOverLifetimeRotateZ);
+            }
         }
     }
 
@@ -408,7 +431,21 @@ export default class ParticleManager extends Manager {
     }
 
     Destroy() {
-        this.scene.remove(this.group);
+        while (this.group.children.length > 0) {
+            this.group.remove(this.group.children[0]);
+        }
+        this.Scene.remove(this.group);
+
+        this.Scene.children.map(c => {
+            this.destroyChild(c);
+
+            c.clear();
+        });
+        while (this.Scene.children.length > 0) {
+            this.Scene.remove(this.Scene.children[0]);
+        }
+        // 清除场景全部child
+        this.Scene.clear();
     }
 
     Create() {
