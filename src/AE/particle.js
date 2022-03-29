@@ -48,6 +48,11 @@ export default class ParticleManager extends Manager {
         this.particleArr = [];
         // 每一个粒子对应的创建时间数组
         this.particleCreateTimeArr = [];
+
+        this.LimitRandom = (min,max) => {
+            var fRound = Math.random() * (max - min) + min;
+            return fRound;
+        }
     }
 
     Init(texture) {
@@ -153,47 +158,59 @@ export default class ParticleManager extends Manager {
 
             this.LookAtWho(obj);
             // console.log(obj.position.x+","+obj.position.y+","+obj.position.z)
+
+            this.OneParticleWithColorOverLifetime(obj, this.particleCreateTimeArr[i]);
         }
     }
 
     // 生产粒子
     CreateMeshPlane() {
-        let material,
-            x = 1;
+        let material, x = 1, alpha = 1,
+        root = new THREE.Object3D(),
+        startSize = this.LimitRandom(this.PARTICLE.startSize1, this.PARTICLE.startSize2),
+        startRotation = this.LimitRandom(this.PARTICLE.startRotation, this.PARTICLE.startRotation2);
+
+        const colorOverLifetimeAlphaKeysList = this.PARTICLE.colorOverLifetimeAlphaKeysList;
+        if (this.PARTICLE.colorOverLiftime && colorOverLifetimeAlphaKeysList 
+            && colorOverLifetimeAlphaKeysList[0]) {
+            alpha = colorOverLifetimeAlphaKeysList[0].data;
+        }
         if (this.PARTICLE.emissiveColorHex) {
             material = new THREE.MeshStandardMaterial({
                 map: this.texture,
                 depthWrite: false,
                 side: THREE.DoubleSide,
-                color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
-                emissive: (new THREE.Color(this.emissiveColorHex)).convertSRGBToLinear(),
+                color: (new THREE.Color(this.PARTICLE.mainColorHex)).convertSRGBToLinear(),
+                emissive: (new THREE.Color(this.PARTICLE.emissiveColorHex)).convertSRGBToLinear(),
                 emissiveIntensity: 1,
                 transparent: true,
-                opacity: 1
+                opacity: alpha
             });
         } else {
             material = new THREE.MeshStandardMaterial({
                 map: this.texture,
                 depthWrite: false,
                 side: THREE.DoubleSide,
-                color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
-                // emissive: (new THREE.Color(this.emissiveColorHex)).convertSRGBToLinear(),
+                color: (new THREE.Color(this.PARTICLE.mainColorHex)).convertSRGBToLinear(),
+                // emissive: (new THREE.Color(this.PARTICLE.emissiveColorHex)).convertSRGBToLinear(),
                 // emissiveIntensity: 1,
                 transparent: true,
-                opacity: 1
+                opacity: alpha
             });
         }
 
         if (this.PARTICLE.renderMode === RenderMode.Stretch) { x = this.PARTICLE.renderLengthScale; }
 
-        const geometry = new THREE.PlaneBufferGeometry(this.PARTICLE.startSize * x, this.PARTICLE.startSize, 1),
+        const geometry = new THREE.PlaneBufferGeometry(startSize * x, startSize, 1),
+        box = new THREE.Mesh(geometry, material);
 
-            box = new THREE.Mesh(geometry, material);
-
-        this.objZero.copy(box.rotation);
+        box.rotation.z = THREE.MathUtils.degToRad(startRotation);
         box.updateMatrixWorld();
 
-        return box;
+        root.add(box);
+        this.objZero.copy(root.rotation);
+
+        return root;
     }
 
     // 管理粒子
@@ -209,7 +226,9 @@ export default class ParticleManager extends Manager {
             { 
                 const theta = Math.random() * 360 * (Math.PI / 180);
                 const phi = Math.random() * 360 * (Math.PI / 180);
+                // 球体表面坐标
                 obj.position.setFromSphericalCoords( this.PARTICLE.radius, phi, theta );
+                // 发射器大小修改
                 if (this.PARTICLE.shape === ShapeEnum.Sphere)
                     obj.position. set(obj.position.x * this.PARTICLE.ShapeScale.x,
                         obj.position.y * this.PARTICLE.ShapeScale.y,
@@ -217,7 +236,7 @@ export default class ParticleManager extends Manager {
                 else
                     obj.position.set(obj.position.x * this.PARTICLE.ShapeScale.x,
                         obj.position.y * this.PARTICLE.ShapeScale.y,
-                        Math.abs(obj.position.z * this.PARTICLE.ShapeScale.z));
+                        -Math.abs(obj.position.z * this.PARTICLE.ShapeScale.z));
             }
             else if (this.PARTICLE.shape === ShapeEnum.Box) {
                 obj.position.set((Math.random() - 0.5) * this.PARTICLE.ShapeScale.x,
@@ -249,6 +268,71 @@ export default class ParticleManager extends Manager {
         obj.position.x -= this.velocityLinearX;
         obj.position.y += this.velocityLinearY;
         obj.position.z += this.velocityLinearZ;
+    }
+
+    // 模拟一个粒子在生命周期内的颜色变化
+    OneParticleWithColorOverLifetime(obj, createTime) {
+        if (!this.PARTICLE.colorOverLiftime) return;
+
+        const life = Date.now() - createTime,
+        allLife = this.PARTICLE.startLifetime * 1000,
+        //活了多久（百分比）
+        percent = life / allLife;
+
+        let color, alpha;
+        if (!this.PARTICLE.colorOverLifetimeColorKeysList) {
+            color = obj.material.color;
+        } else if (this.PARTICLE.colorOverLifetimeColorKeysList.length === 1) {
+            color = (new THREE.Color(parseInt(this.PARTICLE.colorOverLifetimeColorKeysList[0].data))).convertSRGBToLinear();
+        } else if (this.PARTICLE.colorOverLifetimeColorKeysList.length === 2) {
+            const item = this.PARTICLE.colorOverLifetimeColorKeysList[0],
+            itemNext = this.PARTICLE.colorOverLifetimeColorKeysList[1],
+            per = (percent - item.time) / (itemNext.time - item.time),
+            color1 = (new THREE.Color(parseInt(item.data))).convertSRGBToLinear(),
+            color2 = (new THREE.Color(parseInt(itemNext.data))).convertSRGBToLinear();
+
+            if (item.Blend) {
+                color = color1.lerp(color2, per);
+            } else {
+                color = color1;
+            }
+        } else if (this.PARTICLE.colorOverLifetimeColorKeysList.length > 2) {
+            for (let i = 0; i < this.PARTICLE.colorOverLifetimeColorKeysList.length - 1; i++) {
+                const item = this.PARTICLE.colorOverLifetimeColorKeysList[i],
+                itemNext = this.PARTICLE.colorOverLifetimeColorKeysList[i + 1];
+                if (percent >= item.time && percent <= itemNext.time) {
+                    const per = (percent - item.time) / (itemNext.time - item.time),
+                    color1 = (new THREE.Color(parseInt(item.data))).convertSRGBToLinear(),
+                    color2 = (new THREE.Color(parseInt(itemNext.data))).convertSRGBToLinear();
+                    color = color1.lerp(color2, per);
+                    break;
+                }
+            }
+        }
+
+        if (!this.PARTICLE.colorOverLifetimeAlphaKeysList) {
+            alpha = 1;
+        } else if (this.PARTICLE.colorOverLifetimeAlphaKeysList.length === 1) {
+            alpha = this.PARTICLE.colorOverLifetimeAlphaKeysList[0].data;
+        } else if (this.PARTICLE.colorOverLifetimeAlphaKeysList.length === 2) {
+            const item = this.PARTICLE.colorOverLifetimeAlphaKeysList[0],
+            itemNext = this.PARTICLE.colorOverLifetimeAlphaKeysList[1],
+            per = (percent - item.time) / (itemNext.time - item.time);
+            alpha = item.data + (itemNext.data - item.data) * per;
+        } else if (this.PARTICLE.colorOverLifetimeAlphaKeysList.length > 2) {
+            for (let i = 0; i < this.PARTICLE.colorOverLifetimeAlphaKeysList.length - 1; i++) {
+                const item = this.PARTICLE.colorOverLifetimeAlphaKeysList[i],
+                itemNext = this.PARTICLE.colorOverLifetimeAlphaKeysList[i + 1];
+                if (percent >= item.time && percent <= itemNext.time) {
+                    const per = (percent - item.time) / (itemNext.time - item.time);
+                    alpha = item.data + ((itemNext.data - item.data) * per);
+                    break;
+                }
+            }
+        }
+
+        obj.children[0].material.color = color;
+        obj.children[0].material.opacity = alpha;
     }
 
     // 模拟一个粒子根据“RenderMode”控制面片的朝向
