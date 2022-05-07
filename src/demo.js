@@ -23,7 +23,7 @@ let camera,renderer,scene,controls,stats,
 let pipelineAnimationArr = [], lineAnimationArr = [];
 
  function Init(){
-    camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 210000 );
+    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 210000 );
     renderer = new THREE.WebGLRenderer( { antialias: true, alpha:false } );
     scene = new THREE.Scene();
     controls = new OrbitControls( camera, renderer.domElement );
@@ -37,17 +37,22 @@ let pipelineAnimationArr = [], lineAnimationArr = [];
     cameraManager.stats = stats;
     cameraManager.Create();
 
-    var axis = new THREE.AxesHelper(800);
-    scene.add(axis);
+    // var axis = new THREE.AxesHelper(800);
+    // scene.add(axis);
 
-    // FbxLoader();
+    FbxLoader();
     // Fasheqi();
-    // Skybox();
+    Skybox();
 
-    // Particle();
+    Particle();
     // PipelineAnimation();
-    LineAnimation();
+    // LineAnimation();
     // LightFlare();
+
+    // var geometry = new THREE.BoxGeometry( 1000,1000,1000 );
+    // var material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+    // var cube = new THREE.Mesh( geometry, material );
+    // scene.add( cube );
  }
 
  function Animate() {

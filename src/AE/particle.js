@@ -55,7 +55,7 @@ export default class ParticleManager extends Manager {
         this.particleCreateTimeArr = [];
 
         this.LimitRandom = (min,max) => {
-            var fRound = Math.random() * (max - min) + min;
+            let fRound = Math.random() * (max - min) + min;
             return fRound;
         }
     }
@@ -232,9 +232,10 @@ export default class ParticleManager extends Manager {
             const obj = this.CreateMeshPlane();
 
             if (this.PARTICLE.shape === ShapeEnum.Sphere || this.PARTICLE.shape === ShapeEnum.Hemisphere)
-            { 
-                const theta = Math.random() * 360 * (Math.PI / 180);
-                const phi = Math.random() * 360 * (Math.PI / 180);
+            {
+                //theta phi是弧度，而不是度数
+                const theta = THREE.MathUtils.degToRad(this.LimitRandom(0, 360));
+                const phi = THREE.MathUtils.degToRad(this.LimitRandom(0, 360));
                 // 球体表面坐标
                 obj.position.setFromSphericalCoords( this.PARTICLE.radius, phi, theta );
                 // 发射器大小修改
@@ -248,9 +249,9 @@ export default class ParticleManager extends Manager {
                         -Math.abs(obj.position.z * this.PARTICLE.ShapeScale.z));
             }
             else if (this.PARTICLE.shape === ShapeEnum.Box) {
-                obj.position.set((Math.random() - 0.5) * this.PARTICLE.ShapeScale.x,
-                    (Math.random() - 0.5) * this.PARTICLE.ShapeScale.y,
-                    (Math.random() - 0.5) * this.PARTICLE.ShapeScale.z);
+                obj.position.set(this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.x,
+                this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.y,
+                this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.z);
             }
 
             this.group.add(obj);

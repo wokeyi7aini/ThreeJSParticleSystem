@@ -2,7 +2,7 @@ export default
 {
     "position":{
         "x":0,
-        "y":142,
+        "y":100,
         "z":0
     },
     "rotation":{
@@ -12,9 +12,9 @@ export default
         "w":0.7071068
     },
     "scale":{
-        "x":800,
-        "y":800,
-        "z":800
+        "x":5000,
+        "y":5000,
+        "z":5000
     },
     "texturePath":"31b542f8fe2a4c8498cb7fdd80a32883",
     "duration":30,
@@ -28,7 +28,7 @@ export default
     "startRotation2":180,
     "rateOverTime":15,
     "playbackSpeed":1,
-    "maxParticles":500,
+    "maxParticles":20,
     "shape":"Hemisphere",
     "ShapeScale":{
         "x":1,

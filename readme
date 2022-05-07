@@ -1,10 +1,16 @@
-【发包】
+【旧版发包】
 项目地址：https://www.npmjs.com/
 项目：three-effect
 账号：huangqiuyan
 邮箱：huangqiuyan@yushu.biz
 密码：Cctv@123@123
 
+【新版发包】
+项目地址：https://persagy2021.coding.net/p/yushu_web/artifacts/11949686/npm/package/4449661/version/overview?hash=f2268781de6a47718ff5e544eec5724b
+项目：@yushu/three-effect
+账号：见.npmrc文件
+邮箱：见.npmrc文件
+密码：见.npmrc文件
 
 【发包步骤】
 《index.js》 加入需要导出的类/脚本
