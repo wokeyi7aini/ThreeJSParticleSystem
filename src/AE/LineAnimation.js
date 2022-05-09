@@ -156,7 +156,7 @@ export default class LineAnimationManager extends Manager {
     CreateLine3D(material) {
         const txProgress = 1.0 / this.tilingX;
         for (let tx = 0; tx < this.tilingX; tx++) {
-            const tyGroup = new THREE.Group(),
+            let tyGroup = new THREE.Group(),
             offsety = this.offsetY,
             txProgressEnd = 0,
             txProgressStart = 0,
@@ -179,8 +179,8 @@ export default class LineAnimationManager extends Manager {
             }
 
             for (let ty = 0; ty < this.tilingY; ty++) {
-                const geometry = new THREE.PlaneBufferGeometry(this.width, this.height, 1),
-                mesh = new THREE.Mesh(geometry, material);
+                const geometry = new THREE.PlaneBufferGeometry(this.width, this.height, 1);
+                let mesh = new THREE.Mesh(geometry, material);
 
                 const world = mesh.getWorldPosition(new THREE.Vector3()),
                 offsetCount = parseInt(this.tilingY * 0.5),
@@ -250,7 +250,7 @@ export default class LineAnimationManager extends Manager {
     //X方向的偏移
     PlaneMoveX() {
         for (let i = 0; i < this.meshArray.length; i++) {
-            const obj = this.meshArray[i],
+            let obj = this.meshArray[i],
             progress = obj.progress;
             progress += this.speedX;
 
@@ -277,7 +277,7 @@ export default class LineAnimationManager extends Manager {
 
             const point = this.curve.getPointAt(progress);
             if (point) {
-                const tyGroup = obj.tyGroup;
+                let tyGroup = obj.tyGroup;
                 tyGroup.position.set(point.x,point.y,point.z);
 
                 //X轴方向移动，未锁定单个面片的旋转时，按照面片初始旋转量&当前点的法线，根据法线轴旋转面片

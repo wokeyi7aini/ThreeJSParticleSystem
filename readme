@@ -18,3 +18,6 @@
 终端 npm run build
 //可选 终端 npm login
 终端 npm publish
+
+【项目引入】
+npm install @yushu/three-effect@1.0.8 --registry=https://persagy2021-npm.pkg.coding.net/yushu_web/npm/

@@ -44,9 +44,9 @@ let pipelineAnimationArr = [], lineAnimationArr = [];
     // Fasheqi();
     Skybox();
 
-    Particle();
+    // Particle();
     // PipelineAnimation();
-    // LineAnimation();
+    LineAnimation();
     // LightFlare();
 
     // var geometry = new THREE.BoxGeometry( 1000,1000,1000 );
