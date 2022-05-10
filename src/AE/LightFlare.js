@@ -47,11 +47,6 @@ export default class LightFlareManager extends Manager {
         this.load = true;
     }
 
-
-    Update() {
-        this.Animate();
-    }
-
     Destroy() {
         //修改了three的原生脚本
         this.lensflare.deletedElement();

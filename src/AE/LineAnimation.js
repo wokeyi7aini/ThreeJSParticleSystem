@@ -35,7 +35,7 @@ export default class LineAnimationManager extends Manager {
         this.height = LineAnimation.height;
         
         //面片在移动时是否固定使用同一个角度（主要针对tiling）
-        // this.lock = LineAnimation.lock;
+        // this.lock = LineAnimation.locking;
         this.lock = true;
         //是否重复播放
         this.loop = LineAnimation.loop;
