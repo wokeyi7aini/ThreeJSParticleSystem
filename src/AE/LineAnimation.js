@@ -15,19 +15,10 @@ export default class LineAnimationManager extends Manager {
         this.meshArray = [];
 
         this.position = new THREE.Vector3(LineAnimation.position.x, LineAnimation.position.y, LineAnimation.position.z);
-        this.rotation = new THREE.Quaternion(LineAnimation.rotation.x, LineAnimation.rotation.y, LineAnimation.rotation.z, LineAnimation.rotation.w);
+        this.rotation = new THREE.Quaternion(-LineAnimation.rotation.x, LineAnimation.rotation.y, LineAnimation.rotation.z, -LineAnimation.rotation.w);
 
         //面片的旋转值
-        let planeRotate = new THREE.Quaternion(LineAnimation.planeRotation.x, LineAnimation.planeRotation.y, LineAnimation.planeRotation.z, LineAnimation.planeRotation.w);
-        // 旋转值在效果测试时，发现需要左手坐标系转右手坐标系
-        const q1 = new THREE.Quaternion(-planeRotate.x, 
-            planeRotate.y, planeRotate.z, -planeRotate.w),
-        v1 = new THREE.Euler();
-        v1.setFromQuaternion(q1);
-        v1.y += Math.PI; // Y is 180 degrees off
-        v1.z *= -1; // flip Z
-        this.planeRotate = v1;
-        
+        this.planeRotate = new THREE.Quaternion(-LineAnimation.planeRotation.x, LineAnimation.planeRotation.y, LineAnimation.planeRotation.z, -LineAnimation.planeRotation.w);
         //裁剪
         this.tilingX = LineAnimation.tilingX;
         this.tilingY = LineAnimation.tilingY;
@@ -44,7 +35,8 @@ export default class LineAnimationManager extends Manager {
         this.height = LineAnimation.height;
         
         //面片在移动时是否固定使用同一个角度（主要针对tiling）
-        this.lock = LineAnimation.lock;
+        // this.lock = LineAnimation.lock;
+        this.lock = true;
         //是否重复播放
         this.loop = LineAnimation.loop;
         //是否首尾相连
@@ -76,15 +68,9 @@ export default class LineAnimationManager extends Manager {
         this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping; //每个都重复
         this.texture.repeat.set(1, 1);
 
-        //整体流光的位置&旋转
+        // 整体流光的位置&旋转
         // 旋转值在效果测试时，发现需要左手坐标系转右手坐标系
-        const q = new THREE.Quaternion(-this.rotation.x, 
-            this.rotation.y, this.rotation.z, -this.rotation.w),
-        v = new THREE.Euler();
-        v.setFromQuaternion(q);
-        v.y += Math.PI; // Y is 180 degrees off
-        v.z *= -1; // flip Z
-        this.group.rotation.copy(v);
+        this.group.setRotationFromQuaternion(this.rotation);
         this.group.position.set(-this.position.x, this.position.y, this.position.z);
 
         this.LineAnimation(test);
@@ -179,19 +165,11 @@ export default class LineAnimationManager extends Manager {
             }
 
             for (let ty = 0; ty < this.tilingY; ty++) {
-                const geometry = new THREE.PlaneBufferGeometry(this.width, this.height, 1);
+                const geometry = new THREE.PlaneBufferGeometry(this.width, this.height, 1),
+                    offsetCount = parseInt(this.tilingY * 0.5);
                 let mesh = new THREE.Mesh(geometry, material);
-
-                const world = mesh.getWorldPosition(new THREE.Vector3()),
-                offsetCount = parseInt(this.tilingY * 0.5),
-                targetYPos = new THREE.Vector3(world.x, world.y - Math.PI / 2, world.z);
-
-                mesh.lookAt(targetYPos);
-                mesh.updateMatrixWorld();
-                
-                mesh.rotation.x += this.planeRotate.x;
-                mesh.rotation.y += this.planeRotate.y;
-                mesh.rotation.z += this.planeRotate.z;
+                mesh.setRotationFromQuaternion(this.planeRotate);
+                mesh.rotateX(Math.PI / 2);
 
                 //计算Y轴方向tilingY多个面片的间距位置偏移
                 if (this.tilingY !== 1 && this.tilingY % 2 === 0) {
@@ -287,7 +265,7 @@ export default class LineAnimationManager extends Manager {
                     this.tangent.copy(this.frames.tangents[index]);
                     this.twistRotation.setFromAxisAngle(this.tangent, 0);
                     this.binormal.applyQuaternion(this.twistRotation);
-                    const angleToBinormal = this.binormal.angleTo(this.planeRotate.toVector3());
+                    const angleToBinormal = this.binormal.angleTo((new THREE.Vector3()).applyQuaternion(this.planeRotate));
                     tyGroup.quaternion.setFromAxisAngle(this.binormal, angleToBinormal)
                 }
 
