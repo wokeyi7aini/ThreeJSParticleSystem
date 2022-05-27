@@ -436,17 +436,6 @@ export default class ParticleManager extends Manager {
             this.group.remove(this.group.children[0]);
         }
         this.Scene.remove(this.group);
-
-        this.Scene.children.map(c => {
-            this.destroyChild(c);
-
-            c.clear();
-        });
-        while (this.Scene.children.length > 0) {
-            this.Scene.remove(this.Scene.children[0]);
-        }
-        // 清除场景全部child
-        this.Scene.clear();
     }
 
     Create() {

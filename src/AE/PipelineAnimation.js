@@ -59,7 +59,9 @@ export default class PipelineAnimationManager extends Manager {
     }
 
     Init(texturePath) {
-        this.texture = new THREE.TextureLoader().load(texturePath);
+        if (texturePath) {
+            this.texture = new THREE.TextureLoader().load(texturePath);
+        }
         this.LineAnimation();
     }
 
@@ -86,14 +88,17 @@ export default class PipelineAnimationManager extends Manager {
                 curveArr.push(new THREE.Vector3(-this.pathArr[0], this.pathArr[1], this.pathArr[2]));
         }
     
-        this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping; //每个都重复
-        this.texture.repeat.set(this.tilingX, this.tilingY)
-        // this.texture.needsUpdate = true;
+        if (this.texture) {
+            this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping; //每个都重复
+            this.texture.repeat.set(this.tilingX, this.tilingY)
+            // this.texture.needsUpdate = true;
+        }
     
         if (this.emissiveColorHex) {
             material = new THREE.MeshStandardMaterial({
                 map: this.texture,
-                depthWrite: false,
+                depthWrite: true,
+                depthTest: true,
                 side: THREE.DoubleSide,
                 color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
                 emissive: (new THREE.Color(this.emissiveColorHex)).convertSRGBToLinear(),
@@ -104,7 +109,8 @@ export default class PipelineAnimationManager extends Manager {
         } else {
             material = new THREE.MeshStandardMaterial({
                 map: this.texture,
-                depthWrite: false,
+                depthWrite: true,
+                depthTest: true,
                 side: THREE.DoubleSide,
                 color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
                 transparent: true,
@@ -185,6 +191,10 @@ export default class PipelineAnimationManager extends Manager {
     }
 
     Destroy() {
+        while (this.group.children.length > 0) {
+            this.group.remove(this.group.children[0]);
+        }
+        
         this.scene.remove(this.group);
     }
 

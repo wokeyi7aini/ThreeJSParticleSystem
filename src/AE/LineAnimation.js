@@ -64,9 +64,11 @@ export default class LineAnimationManager extends Manager {
     }
 
     Init(texturePath, test = false) {
-        this.texture = new THREE.TextureLoader().load(texturePath);
-        this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping; //每个都重复
-        this.texture.repeat.set(1, 1);
+        if (texturePath) {
+            this.texture = new THREE.TextureLoader().load(texturePath);
+            this.texture.wrapS = this.texture.wrapT = THREE.RepeatWrapping; //每个都重复
+            this.texture.repeat.set(1, 1);
+        }
 
         // 整体流光的位置&旋转
         // 旋转值在效果测试时，发现需要左手坐标系转右手坐标系
@@ -96,7 +98,8 @@ export default class LineAnimationManager extends Manager {
         if (this.emissiveColorHex) {
             material = new THREE.MeshStandardMaterial({
                 map: this.texture,
-                depthWrite: false,
+                depthWrite: true,
+                depthTest: true,
                 side: THREE.DoubleSide,
                 color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
                 emissive: (new THREE.Color(this.emissiveColorHex)).convertSRGBToLinear(),
@@ -107,7 +110,8 @@ export default class LineAnimationManager extends Manager {
         } else {
             material = new THREE.MeshStandardMaterial({
                 map: this.texture,
-                depthWrite: false,
+                depthWrite: true,
+                depthTest: true,
                 side: THREE.DoubleSide,
                 color: (new THREE.Color(this.mainColorHex)).convertSRGBToLinear(),
                 transparent: true,
@@ -393,6 +397,9 @@ export default class LineAnimationManager extends Manager {
     }
 
     Destroy() {
+        while (this.group.children.length > 0) {
+            this.group.remove(this.group.children[0]);
+        }
         this.scene.remove(this.group);
     }
 
