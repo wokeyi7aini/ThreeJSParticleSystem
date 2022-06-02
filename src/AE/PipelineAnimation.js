@@ -147,7 +147,8 @@ export default class PipelineAnimationManager extends Manager {
             this.group.position.set(-this.position.x, this.position.y + this.width * 0.5, this.position.z);
         }
         else {
-            this.group.rotation.copy(new THREE.Vector3(0,0,0));
+            const v = new THREE.Euler();
+            this.group.rotation.copy(v);
             this.group.position.set(0, this.width * 0.5, 0);
         }
         this.group.add(mesh);
