@@ -85,10 +85,11 @@ export default class ParticleManager extends Manager {
 
         this.startRotation = THREE.MathUtils.degToRad(this.PARTICLE.startRotation);
 
-        this.rotationOverLifetimeRotateX = THREE.MathUtils.degToRad(-this.PARTICLE.rotationOverLifetimeRotate.x * 0.02);
-        this.rotationOverLifetimeRotateY = THREE.MathUtils.degToRad(this.PARTICLE.rotationOverLifetimeRotate.y * 0.02);
-        this.rotationOverLifetimeRotateZ = THREE.MathUtils.degToRad(this.PARTICLE.rotationOverLifetimeRotate.z * 0.02);
-
+        if (this.PARTICLE.rotationOverLifetime) {
+            this.rotationOverLifetimeRotateX = THREE.MathUtils.degToRad(-this.PARTICLE.rotationOverLifetimeRotate.x * 0.02);
+            this.rotationOverLifetimeRotateY = THREE.MathUtils.degToRad(this.PARTICLE.rotationOverLifetimeRotate.y * 0.02);
+            this.rotationOverLifetimeRotateZ = THREE.MathUtils.degToRad(this.PARTICLE.rotationOverLifetimeRotate.z * 0.02);
+        }
         group.scale.set(this.PARTICLE.scale.x, this.PARTICLE.scale.y, this.PARTICLE.scale.z);
         group.position.set(-this.PARTICLE.position.x, this.PARTICLE.position.y, this.PARTICLE.position.z);
         // 旋转值在效果测试时，发现需要左手坐标系转右手坐标系

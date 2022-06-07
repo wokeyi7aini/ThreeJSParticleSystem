@@ -49,7 +49,7 @@ export default class LightFlareManager extends Manager {
 
     Destroy() {
         //修改了three的原生脚本
-        this.lensflare.deletedElement();
+        // this.lensflare.deletedElement();
         /*
         1.找到“three/examples/jsm/objects/Lensflare.js”脚本，“class Lensflare”类中增加方法：
         this.deletedElement = function ( ) {

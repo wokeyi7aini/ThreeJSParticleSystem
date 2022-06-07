@@ -20,4 +20,4 @@
 终端 npm publish
 
 【项目引入】
-npm install @yushu/three-effect@1.0.16 --registry=https://persagy2021-npm.pkg.coding.net/yushu_web/npm/
+npm install @yushu/three-effect@1.0.17 --registry=https://persagy2021-npm.pkg.coding.net/yushu_web/npm/
