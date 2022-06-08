@@ -31,13 +31,13 @@ export default class ParticleManager extends Manager {
         this.objZero = new THREE.Vector3();
         this.group = new THREE.Group();
         this.MaxParticleCount = 0;
-        // camera正前方向量
+        /** camera正前方向量 */ 
         this.tartgetPosCamera = null;
 
-        //创建粒子间隙时间
+        /** 创建粒子间隙时间 */
         this.interval = 0;
         this.intervalCount = 0;
-        // 创建粒子数量
+        /** 创建粒子数量 */
         this.newPerFrame = 0;
         this.newCount = 0;
         this.velocityLinearX = 0;
@@ -49,9 +49,9 @@ export default class ParticleManager extends Manager {
         this.rotationOverLifetimeRotateY = 0;
         this.rotationOverLifetimeRotateZ = 0;
         
-        // 粒子数组
+        /** 粒子数组 */
         this.particleArr = [];
-        // 每一个粒子对应的创建时间数组
+        /** 每一个粒子对应的创建时间数组 */
         this.particleCreateTimeArr = [];
 
         this.LimitRandom = (min,max) => {
@@ -62,11 +62,13 @@ export default class ParticleManager extends Manager {
 
     Init(texture) {
         const group = new THREE.Group();
-        // 最大粒子数 Particles=PARTICLE.startLifetime*PARTICLE.rateOverTime
+        /** 最大粒子数 Particles=PARTICLE.startLifetime*PARTICLE.rateOverTime */
         this.MaxParticleCount = this.PARTICLE.startLifetime * this.PARTICLE.rateOverTime <= this.PARTICLE.maxParticles
             ? this.PARTICLE.startLifetime * this.PARTICLE.rateOverTime : this.PARTICLE.maxParticles;
         this.currentCount = 0;
-        this.texture = new THREE.TextureLoader().load(texture);
+        if (texture) {
+            this.texture = new THREE.TextureLoader().load(texture);
+        }
 
         this.startTime = Date.now();
         this.intervalCount = parseInt(60 / this.PARTICLE.rateOverTime);
@@ -109,7 +111,11 @@ export default class ParticleManager extends Manager {
         this.load = true;
     }
 
-    // 粒子解析
+    /**
+     * 粒子解析
+     * @param {*} PARTICLE 数据从json转换到需要的类型
+     * @returns PARTICLE
+     */
     FrmatOption(PARTICLE) {
         PARTICLE.position = new THREE.Vector3(PARTICLE.position.x, PARTICLE.position.y, PARTICLE.position.z);
         PARTICLE.rotation = new THREE.Quaternion(PARTICLE.rotation.x, PARTICLE.rotation.y, PARTICLE.rotation.z, PARTICLE.rotation.w);
@@ -126,7 +132,9 @@ export default class ParticleManager extends Manager {
         return PARTICLE;
     }
 
-    // 每一帧检测是否需要创建粒子
+    /**
+     * 每一帧检测是否需要创建粒子
+     */
     Production() {
         if (this.newPerFrame <= 0) {
             this.interval++;
@@ -142,7 +150,9 @@ export default class ParticleManager extends Manager {
         }
     }
 
-    // 每一帧检测粒子生命周期、粒子的运动、粒子的朝向
+    /**
+     * 每一帧检测粒子生命周期、粒子的运动、粒子的朝向
+     */
     ParticleAnimation() {
         //#region 检测粒子生命周期
         const life = Date.now() - this.particleCreateTimeArr[0];
@@ -167,13 +177,15 @@ export default class ParticleManager extends Manager {
             //#endregion
 
             this.LookAtWho(obj);
-            // console.log(obj.position.x+","+obj.position.y+","+obj.position.z)
 
             this.OneParticleWithColorOverLifetime(obj, this.particleCreateTimeArr[i]);
         }
     }
 
-    // 生产粒子
+    /**
+     * 产生粒子
+     * @returns 粒子的存放对象，是一个Group
+     */
     CreateMeshPlane() {
         let material, x = 1, alpha = 1;
 
@@ -223,7 +235,12 @@ export default class ParticleManager extends Manager {
         return root;
     }
 
-    // 管理粒子
+    /**
+     * 管理粒子
+     * @param {*} count 一次创建的粒子数量
+     * @param {*} time 这一批count数量的粒子的生命开始时间
+     * @returns 粒子数组
+     */
     ParticleMany(count, time) {
         this.currentCount += count;
 
@@ -234,23 +251,17 @@ export default class ParticleManager extends Manager {
 
             if (this.PARTICLE.shape === ShapeEnum.Sphere || this.PARTICLE.shape === ShapeEnum.Hemisphere)
             {
-                //theta phi是弧度，而不是度数
-                const theta = THREE.MathUtils.degToRad(this.LimitRandom(0, 360));
-                const phi = THREE.MathUtils.degToRad(this.LimitRandom(0, 360));
-                // 球体表面坐标
-                obj.position.setFromSphericalCoords( this.PARTICLE.radius, phi, theta );
+                const position = this.OneParticlePositionWhenSphere(obj, 0.3);
                 // 发射器大小修改
-                if (this.PARTICLE.shape === ShapeEnum.Sphere)
-                    obj.position. set(obj.position.x * this.PARTICLE.ShapeScale.x,
-                        obj.position.y * this.PARTICLE.ShapeScale.y,
-                        obj.position.z * this.PARTICLE.ShapeScale.z);
-                else
-                    obj.position.set(obj.position.x * this.PARTICLE.ShapeScale.x,
-                        obj.position.y * this.PARTICLE.ShapeScale.y,
-                        -Math.abs(obj.position.z * this.PARTICLE.ShapeScale.z));
+                if (this.PARTICLE.shape === ShapeEnum.Sphere) {
+                    obj.position.set(position.x, position.y, position.z);
+                }
+                else {
+                    obj.position.set(position.x, position.y, -Math.abs(position.z));
+                }
             }
             else if (this.PARTICLE.shape === ShapeEnum.Box) {
-                obj.position.set(this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.x,
+                obj.position.set(this.LimitRandom(-1, 0) * this.PARTICLE.ShapeScale.x,
                 this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.y,
                 this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.z);
             }
@@ -266,7 +277,10 @@ export default class ParticleManager extends Manager {
         return parList;
     }
 
-    // 模拟一个粒子的运动
+    /**
+     * 模拟一个粒子的运动
+     * @param {*} obj 粒子对象
+     */
     OneParticleMoving(obj) {
         if (this.PARTICLE.shape === ShapeEnum.Sphere || this.PARTICLE.shape === ShapeEnum.Hemisphere) {
             obj.position.x += (this.speed * obj.position.x * 0.002);
@@ -281,13 +295,17 @@ export default class ParticleManager extends Manager {
         obj.position.z += this.velocityLinearZ;
     }
 
-    // 模拟一个粒子在生命周期内的颜色变化
+    /**
+     * 模拟一个粒子在生命周期内的颜色变化
+     * @param {*} obj 粒子对象
+     * @param {*} createTime 粒子的生命开始时间/创建时间
+     */
     OneParticleWithColorOverLifetime(obj, createTime) {
         if (!this.PARTICLE.colorOverLiftime) return;
 
         const life = Date.now() - createTime,
         allLife = this.PARTICLE.startLifetime * 1000,
-        //活了多久（百分比）
+        // 活了多久（百分比）
         percent = life / allLife;
 
         let color, alpha;
@@ -346,7 +364,10 @@ export default class ParticleManager extends Manager {
         obj.children[0].material.opacity = alpha;
     }
 
-    // 模拟一个粒子根据“RenderMode”控制面片的朝向
+    /**
+     * 模拟一个粒子根据“RenderMode”控制面片的朝向
+     * @param {*} obj 粒子对象
+     */
     LookAtWho(obj) {
         if (!this.tartgetPosCamera)
             this.tartgetPosCamera = this.camera.getWorldDirection(new THREE.Vector3());
@@ -390,16 +411,18 @@ export default class ParticleManager extends Manager {
         }
     }
 
-    // 模拟MaxParticleCount个粒子“预热”一次性发射
+    /**
+     * 模拟MaxParticleCount个粒子“预热”一次性发射
+     */
     Prewarm(){
-        //只有勾选了Looping后才能勾选
+        // 只有勾选了Looping后才能勾选
         if (!this.PARTICLE.looping 
-            //不需要预热，就算了
+            // 不需要预热，就算了
             || (this.PARTICLE.looping && !this.PARTICLE.prewarm)) {
                 return;
             }
 
-        //模拟创建粒子间隙时间
+        // 模拟创建粒子间隙时间
         let intervalCount = 1;
         if (this.newPerFrame <= 0) {
             intervalCount = this.intervalCount;
@@ -411,16 +434,45 @@ export default class ParticleManager extends Manager {
         const countPerFrame = Math.round(1000 / roundCount);
         
         for (let i = this.MaxParticleCount; i > 0; i--) {
-            //时间既不是startLifetime也不是duration，应该根据maxParticles计算第一次销毁的时间间距
+            // 时间既不是startLifetime也不是duration，应该根据maxParticles计算第一次销毁的时间间距
             let timeMoving = parseInt(countPerFrame * intervalCount * i);
             let createTime = (new Date()).setTime(dateNow - timeMoving);
             let pp = this.ParticleMany(1, createTime);
             for (let j = 0; j < pp.length; j++) {
                 let obj = pp[j];
-                for (let kk = 0; kk < (timeMoving / 1000) * 60; kk++)
+                for (let kk = 0; kk < (timeMoving / 1000) * 60; kk++) {
                     this.OneParticleMoving(obj);
+                }
                 this.LookAtWho(obj);
             }
+        }
+    }
+
+    /**
+     * 球形/半球形的发射器计算粒子的坐标
+     * @param {*} obj 粒子对象
+     * @param {*} offsetSize 控制远离中心线的阈值
+     * @returns 粒子坐标{x,y,z}
+     */
+    OneParticlePositionWhenSphere(obj, offsetSize) {
+        if (offsetSize >= 1) {
+            return { x: obj.position.x, y: obj.position.y, z: obj.position.z };
+        }
+        // theta phi是弧度，而不是度数
+        const theta = THREE.MathUtils.degToRad(this.LimitRandom(-360, 360));
+        const phi = THREE.MathUtils.degToRad(this.LimitRandom(-360, 360));
+        // 球体表面坐标
+        obj.position.setFromSphericalCoords( this.PARTICLE.radius, phi, theta );
+        let x = (obj.position.x - this.PARTICLE.radius * 0.5) * this.PARTICLE.ShapeScale.x,
+            y = obj.position.y * this.PARTICLE.ShapeScale.y,
+            offset = this.PARTICLE.radius * this.PARTICLE.ShapeScale.z * offsetSize,
+            z = obj.position.z * this.PARTICLE.ShapeScale.z;
+        // 如果球表面的坐标太接近于赤道线，就再重新取一次，以减少赤道附近的粒子数过多，而其他地方的粒子太少
+        if (Math.abs(z) <= Math.abs(offset)) {
+            offsetSize = 0.8;
+            return this.OneParticlePositionWhenSphere(obj, offsetSize);
+        } else {
+            return { x: x, y: y, z: z };
         }
     }
 
