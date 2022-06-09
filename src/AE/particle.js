@@ -261,7 +261,13 @@ export default class ParticleManager extends Manager {
                 }
             }
             else if (this.PARTICLE.shape === ShapeEnum.Box) {
-                obj.position.set(this.LimitRandom(-1, 0) * this.PARTICLE.ShapeScale.x,
+                let x = 0;
+                if (this.PARTICLE.position.x > 0) {
+                    x = this.LimitRandom(-1, 0) * this.PARTICLE.ShapeScale.x;
+                } else {
+                    x = this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.x
+                }
+                obj.position.set(x,
                 this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.y,
                 this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.z);
             }
@@ -428,6 +434,11 @@ export default class ParticleManager extends Manager {
             intervalCount = this.intervalCount;
         }
 
+        // if ((this.particleArr.length >= this.MaxParticleCount
+        //     && life >= (this.PARTICLE.duration * 1000) / this.PARTICLE.playbackSpeed)
+        //     // 活够了，销毁了
+        //     || life >= (this.PARTICLE.startLifetime * 1000) / this.PARTICLE.playbackSpeed)
+
         const dateNow = (new Date()).getTime();
         
         const roundCount = 60 * this.newCount;
@@ -463,10 +474,15 @@ export default class ParticleManager extends Manager {
         const phi = THREE.MathUtils.degToRad(this.LimitRandom(-360, 360));
         // 球体表面坐标
         obj.position.setFromSphericalCoords( this.PARTICLE.radius, phi, theta );
-        let x = (obj.position.x - this.PARTICLE.radius * 0.5) * this.PARTICLE.ShapeScale.x,
+        let x = 0,
             y = obj.position.y * this.PARTICLE.ShapeScale.y,
             offset = this.PARTICLE.radius * this.PARTICLE.ShapeScale.z * offsetSize,
             z = obj.position.z * this.PARTICLE.ShapeScale.z;
+        if (this.PARTICLE.position.x > 0) {
+            x = (obj.position.x - this.PARTICLE.radius * 0.5) * this.PARTICLE.ShapeScale.x
+        } else {
+            x = obj.position.x * this.PARTICLE.ShapeScale.x;
+        }
         // 如果球表面的坐标太接近于赤道线，就再重新取一次，以减少赤道附近的粒子数过多，而其他地方的粒子太少
         if (Math.abs(z) <= Math.abs(offset)) {
             offsetSize = 0.8;
