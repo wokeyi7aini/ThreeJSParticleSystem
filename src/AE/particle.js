@@ -93,7 +93,7 @@ export default class ParticleManager extends Manager {
             this.rotationOverLifetimeRotateZ = THREE.MathUtils.degToRad(this.PARTICLE.rotationOverLifetimeRotate.z * 0.02);
         }
         group.scale.set(this.PARTICLE.scale.x, this.PARTICLE.scale.y, this.PARTICLE.scale.z);
-        group.position.set(-this.PARTICLE.position.x, this.PARTICLE.position.y, this.PARTICLE.position.z);
+        group.position.set(0, this.PARTICLE.position.y, this.PARTICLE.position.z);
         // 旋转值在效果测试时，发现需要左手坐标系转右手坐标系
         const q = new THREE.Quaternion(-this.PARTICLE.rotation.x, 
             this.PARTICLE.rotation.y, this.PARTICLE.rotation.z, -this.PARTICLE.rotation.w),
@@ -254,20 +254,14 @@ export default class ParticleManager extends Manager {
                 const position = this.OneParticlePositionWhenSphere(obj, 0.3);
                 // 发射器大小修改
                 if (this.PARTICLE.shape === ShapeEnum.Sphere) {
-                    obj.position.set(position.x, position.y, position.z);
+                    obj.position.set(position.x - this.PARTICLE.position.x, position.y, position.z);
                 }
                 else {
-                    obj.position.set(position.x, position.y, -Math.abs(position.z));
+                    obj.position.set(position.x - this.PARTICLE.position.x, position.y, -Math.abs(position.z));
                 }
             }
             else if (this.PARTICLE.shape === ShapeEnum.Box) {
-                let x = 0;
-                if (this.PARTICLE.position.x > 0) {
-                    x = this.LimitRandom(-1, 0) * this.PARTICLE.ShapeScale.x;
-                } else {
-                    x = this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.x
-                }
-                obj.position.set(x,
+                obj.position.set(this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.x - this.PARTICLE.position.x,
                 this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.y,
                 this.LimitRandom(-0.5, 0.5) * this.PARTICLE.ShapeScale.z);
             }
@@ -474,15 +468,10 @@ export default class ParticleManager extends Manager {
         const phi = THREE.MathUtils.degToRad(this.LimitRandom(-360, 360));
         // 球体表面坐标
         obj.position.setFromSphericalCoords( this.PARTICLE.radius, phi, theta );
-        let x = 0,
+        let x = obj.position.x * this.PARTICLE.ShapeScale.x,
             y = obj.position.y * this.PARTICLE.ShapeScale.y,
             offset = this.PARTICLE.radius * this.PARTICLE.ShapeScale.z * offsetSize,
             z = obj.position.z * this.PARTICLE.ShapeScale.z;
-        if (this.PARTICLE.position.x > 0) {
-            x = (obj.position.x - this.PARTICLE.radius * 0.5) * this.PARTICLE.ShapeScale.x
-        } else {
-            x = obj.position.x * this.PARTICLE.ShapeScale.x;
-        }
         // 如果球表面的坐标太接近于赤道线，就再重新取一次，以减少赤道附近的粒子数过多，而其他地方的粒子太少
         if (Math.abs(z) <= Math.abs(offset)) {
             offsetSize = 0.8;
