@@ -59,8 +59,7 @@ export default class FasheQiManager extends Manager {
         var q = new THREE.Quaternion( -this.PARTICLE.rotation.x, this.PARTICLE.rotation.y, this.PARTICLE.rotation.z, -this.PARTICLE.rotation.w);
         var v = new THREE.Euler();  
         v.setFromQuaternion( q );
-        if (this.rotation.y !== 0)
-            v.y += Math.PI; // Y is 180 degrees off
+        v.y += Math.PI; // Y is 180 degrees off
         v.z *= -1; // flip Z
         mesh.rotation.copy( v );
         

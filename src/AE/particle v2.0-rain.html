@@ -94,8 +94,7 @@
         var q = new THREE.Quaternion( -PARTICLE.rotation.x, PARTICLE.rotation.y, PARTICLE.rotation.z, -PARTICLE.rotation.w );
         var v = new THREE.Euler();  
         v.setFromQuaternion( q );
-        if (this.rotation.y !== 0)
-            v.y += Math.PI; // Y is 180 degrees off
+        v.y += Math.PI; // Y is 180 degrees off
         v.z *= -1; // flip Z
         group.rotation.copy( v );
 

@@ -141,8 +141,7 @@ export default class PipelineAnimationManager extends Manager {
                 this.rotation.y, this.rotation.z, -this.rotation.w),
                 v = new THREE.Euler();
             v.setFromQuaternion(q);
-            if (this.rotation.y !== 0)
-                v.y += Math.PI; // Y is 180 degrees off
+            v.y += Math.PI; // Y is 180 degrees off
             v.z *= -1; // flip Z
             this.group.rotation.copy(v);
             this.group.position.set(-this.position.x, this.position.y + this.width * 0.5, this.position.z);

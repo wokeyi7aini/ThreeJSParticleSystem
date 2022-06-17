@@ -99,8 +99,7 @@ export default class ParticleManager extends Manager {
             this.PARTICLE.rotation.y, this.PARTICLE.rotation.z, -this.PARTICLE.rotation.w),
             v = new THREE.Euler();
         v.setFromQuaternion(q);
-        if (this.rotation.y !== 0)
-            v.y += Math.PI; // Y is 180 degrees off
+        v.y += Math.PI; // Y is 180 degrees off
         v.z *= -1; // flip Z
         this.group = group;
         this.group.rotation.copy(v);
